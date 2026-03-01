@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlucoHelper — Calculadora de Bolus para Diabéticos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2234;
+            --bg-input: #0d1321;
+            --border: #1e2a3a;
+            --border-focus: #38bdf8;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --text-dim: #475569;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --accent-2: #818cf8;
+            --success: #34d399;
+            --success-bg: rgba(52, 211, 153, 0.1);
+            --warning: #fbbf24;
+            --warning-bg: rgba(251, 191, 36, 0.1);
+            --danger: #f87171;
+            --danger-bg: rgba(248, 113, 113, 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(129, 140, 248, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            padding: 24px 0 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 50%;
+            transform: translateX(-50%);
+            width: 120px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
+        }
+        .logo h1 {
+            font-size: 28px; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header p { color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+        /* ─── Layout ─── */
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
+
+        /* ─── Tabs ─── */
+        .tabs {
+            display: flex; gap: 4px;
+            background: var(--bg-card); padding: 4px;
+            border-radius: var(--radius); margin-bottom: 28px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        .tab {
+            flex: 1; padding: 12px 10px;
+            border: none; background: transparent;
+            color: var(--text-muted); font-family: inherit;
+            font-size: 13px; font-weight: 500;
+            border-radius: var(--radius-sm); cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .tab:hover { color: var(--text); background: var(--bg-card-hover); }
+        .tab.active {
+            background: var(--accent); color: #0a0e17;
+            font-weight: 600; box-shadow: 0 2px 12px rgba(56, 189, 248, 0.3);
+        }
+        .tab-icon { font-size: 15px; }
+
+        /* ─── Panels ─── */
+        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ─── Cards ─── */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 24px;
+            margin-bottom: 20px; box-shadow: var(--shadow);
+        }
+        .card-title {
+            font-size: 16px; font-weight: 600; color: var(--text);
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-title .icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .card-title .icon.blue { background: var(--accent-glow); }
+        .card-title .icon.green { background: var(--success-bg); }
+        .card-title .icon.yellow { background: var(--warning-bg); }
+        .card-title .icon.red { background: var(--danger-bg); }
+        .card-title .icon.purple { background: rgba(129, 140, 248, 0.12); }
+
+        /* ─── Forms ─── */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+
+        label { font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+        label .unit { color: var(--text-dim); font-weight: 400; }
+
+        input[type="number"], input[type="text"], input[type="datetime-local"], select, textarea {
+            background: var(--bg-input); border: 1px solid var(--border);
+            color: var(--text); font-family: 'JetBrains Mono', monospace;
+            font-size: 14px; padding: 10px 14px;
+            border-radius: var(--radius-sm); outline: none;
+            transition: all 0.2s ease; width: 100%;
+        }
+        textarea { font-family: 'DM Sans', sans-serif; resize: vertical; min-height: 60px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+        .toggle { position: relative; width: 44px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--border); border-radius: 12px; transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: ''; position: absolute;
+            height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background: var(--text); border-radius: 50%; transition: 0.3s;
+        }
+        .toggle input:checked + .toggle-slider { background: var(--accent); }
+        .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        /* ─── Buttons ─── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border: none; border-radius: var(--radius-sm);
+            font-family: inherit; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease; width: 100%;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #0a0e17; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(56, 189, 248, 0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: var(--bg-card-hover); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+        .btn-danger:hover { background: rgba(248,113,113,0.2); }
+        .btn-sm { padding: 8px 14px; font-size: 12px; }
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-row .btn { flex: 1; }
+
+        /* ─── Results ─── */
+        .result-card {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(129, 140, 248, 0.05));
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: var(--radius); padding: 28px;
+            margin-top: 24px; animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+        .bolus-display { text-align: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .bolus-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 8px; }
+        .bolus-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 52px; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        .bolus-unit { font-size: 20px; color: var(--text-muted); margin-left: 4px; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .detail-item { background: var(--bg-card); padding: 14px; border-radius: var(--radius-sm); text-align: center; }
+        .detail-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
+        .detail-item .value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: var(--text); }
+
+        .formula-box { background: var(--bg-input); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
+        .formula-box h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 10px; }
+        .formula-line { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); padding: 4px 0; display: flex; align-items: center; gap: 8px; }
+        .formula-line .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .formula-line .dot.blue { background: var(--accent); }
+        .formula-line .dot.green { background: var(--success); }
+        .formula-line .dot.purple { background: var(--accent-2); }
+        .formula-line .dot.yellow { background: var(--warning); }
+
+        /* ─── Warnings ─── */
+        .warning-box { padding: 12px 16px; border-radius: var(--radius-sm); margin-top: 12px; font-size: 13px; line-height: 1.5; }
+        .warning-box.danger { background: var(--danger-bg); border-left: 3px solid var(--danger); color: var(--danger); }
+        .warning-box.warn { background: var(--warning-bg); border-left: 3px solid var(--warning); color: var(--warning); }
+        .warning-box.info { background: var(--accent-glow); border-left: 3px solid var(--accent); color: var(--accent); }
+
+        /* ─── Photo Section ─── */
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: var(--radius);
+            padding: 48px 24px; text-align: center; cursor: pointer;
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .upload-zone:hover { border-color: var(--accent); background: var(--accent-glow); }
+        .upload-zone.has-image { padding: 0; border-style: solid; border-color: var(--accent); }
+        .upload-zone img { width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius-sm); }
+        .upload-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+        .upload-zone h3 { color: var(--text); font-size: 16px; margin-bottom: 6px; }
+        .upload-zone p { color: var(--text-muted); font-size: 13px; }
+        #file-input { display: none; }
+
+        /* ─── Food Search ─── */
+        .search-box { position: relative; }
+        .search-box input { padding-left: 40px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.4; }
+        .food-results { max-height: 400px; overflow-y: auto; margin-top: 12px; }
+        .food-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-radius: var(--radius-sm);
+            transition: background 0.15s; cursor: pointer;
+        }
+        .food-item:hover { background: var(--bg-card-hover); }
+        .food-item .name { font-size: 14px; color: var(--text); text-transform: capitalize; }
+        .food-item .cho { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+        .food-item .portion { font-size: 12px; color: var(--text-dim); }
+        .selected-foods { margin-top: 16px; }
+        .selected-food {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: var(--bg-input);
+            border-radius: var(--radius-sm); margin-bottom: 6px;
+        }
+        .selected-food .info { display: flex; align-items: center; gap: 12px; }
+        .selected-food .name { font-size: 14px; text-transform: capitalize; }
+        .selected-food .cho { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 500; }
+        .remove-food { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; padding: 4px; opacity: 0.6; }
+        .remove-food:hover { opacity: 1; }
+        .total-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(52, 211, 153, 0.08));
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: var(--radius-sm); margin-top: 16px;
+        }
+        .total-bar .label { font-weight: 600; }
+        .total-bar .value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); }
+
+        /* ─── Registry Table ─── */
+        .log-table-wrapper { overflow-x: auto; margin-top: 16px; }
+        table.log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.log-table th {
+            background: var(--bg-input); color: var(--text-muted);
+            padding: 10px 12px; text-align: left; font-weight: 600;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+            position: sticky; top: 0; z-index: 1;
+            border-bottom: 1px solid var(--border);
+        }
+        table.log-table td {
+            padding: 10px 12px; border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        table.log-table tr:hover td { background: var(--bg-card-hover); }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-low { background: var(--danger-bg); color: var(--danger); }
+        .badge-normal { background: var(--success-bg); color: var(--success); }
+        .badge-high { background: var(--warning-bg); color: var(--warning); }
+        .badge-very-high { background: var(--danger-bg); color: var(--danger); }
+        .del-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; }
+        .del-btn:hover { color: var(--danger); }
+
+        /* ─── Charts ─── */
+        .chart-container { position: relative; height: 300px; margin: 16px 0; }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* ─── Stats Grid ─── */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-card {
+            background: var(--bg-input); border-radius: var(--radius-sm);
+            padding: 16px; text-align: center;
+        }
+        .stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
+        .stat-card .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; }
+        .stat-card .stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+        /* ─── Analysis Section ─── */
+        .analysis-content {
+            font-size: 14px; line-height: 1.8; color: var(--text);
+        }
+        .analysis-content h3 {
+            font-size: 15px; font-weight: 600; color: var(--accent);
+            margin: 20px 0 8px; padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .analysis-content h3:first-child { margin-top: 0; }
+        .analysis-content p { margin-bottom: 10px; }
+        .analysis-content strong { color: var(--text); }
+        .analysis-loading {
+            text-align: center; padding: 40px;
+            color: var(--text-muted);
+        }
+        .analysis-loading .spinner {
+            width: 40px; height: 40px; border: 3px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Disclaimer ─── */
+        .disclaimer {
+            background: var(--warning-bg); border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: var(--radius-sm); padding: 14px 18px;
+            font-size: 12px; color: var(--warning); text-align: center;
+            margin-top: 24px; line-height: 1.6;
+        }
+
+        /* ─── API Info ─── */
+        .endpoint-card { background: var(--bg-input); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
+        .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; margin-right: 8px; }
+        .method.get { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+        .method.post { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+        .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+        .endpoint-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+        code { background: var(--bg-input); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        pre {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 16px; overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            line-height: 1.6; color: var(--text-muted); margin-top: 12px;
+        }
+
+        /* ─── Period Selector ─── */
+        .period-selector {
+            display: flex; gap: 4px; background: var(--bg-input);
+            padding: 3px; border-radius: var(--radius-sm); margin-bottom: 20px;
+            width: fit-content;
+        }
+        .period-btn {
+            padding: 6px 16px; border: none; background: transparent;
+            color: var(--text-muted); font-family: inherit; font-size: 12px;
+            font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+        }
+        .period-btn:hover { color: var(--text); }
+        .period-btn.active { background: var(--accent); color: #0a0e17; font-weight: 600; }
+
+        /* ─── Moment Tags ─── */
+        .moment-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .moment-tag {
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; cursor: pointer; transition: all 0.15s;
+            border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+        }
+        .moment-tag:hover { border-color: var(--accent); color: var(--accent); }
+        .moment-tag.selected { background: var(--accent); color: #0a0e17; border-color: var(--accent); font-weight: 600; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .form-grid, .chart-row { grid-template-columns: 1fr; }
+            .form-grid-3 { grid-template-columns: 1fr 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .tabs { flex-wrap: nowrap; overflow-x: auto; }
+            .tab { min-width: max-content; padding: 10px 8px; font-size: 12px; }
+            .bolus-value { font-size: 40px; }
+            .container { padding: 0 12px 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">💉</div>
+            <h1>GlucoHelper</h1>
+        </div>
+        <p>Calculadora de bolus, registro glicémico y análisis inteligente<br>Diseñada por y para personas con diabetes</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('calculator')" id="tab-calculator">
+            <span class="tab-icon">🧮</span> Calculadora
+        </button>
+        <button class="tab" onclick="switchTab('foods')" id="tab-foods">
+            <span class="tab-icon">🍽️</span> Alimentos
+        </button>
+        <button class="tab" onclick="switchTab('photo')" id="tab-photo">
+            <span class="tab-icon">📸</span> Foto
+        </button>
+        <button class="tab" onclick="switchTab('registry')" id="tab-registry">
+            <span class="tab-icon">📋</span> Registro
+        </button>
+        <button class="tab" onclick="switchTab('charts')" id="tab-charts">
+            <span class="tab-icon">📊</span> Gráficos
+        </button>
+        <button class="tab" onclick="switchTab('analysis')" id="tab-analysis">
+            <span class="tab-icon">🩺</span> Análisis
+        </button>
+        <button class="tab" onclick="switchTab('api')" id="tab-api">
+            <span class="tab-icon">⚡</span> API
+        </button>
+    </div>
+
+    <!-- ═══════════ CALCULATOR ═══════════ -->
+    <div class="panel active" id="panel-calculator">
+        <div class="card">
+            <div class="card-title"><div class="icon blue">⚙️</div> Mi Configuración</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Ratio I:CHO <span class="unit">(1U cubre X g)</span></label>
+                    <input type="number" id="ratio" value="10" min="1" max="50" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Factor Sensibilidad <span class="unit">(1U baja X mg/dL)</span></label>
+                    <input type="number" id="sensibilidad" value="40" min="5" max="150" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Glicemia Objetivo <span class="unit">(mg/dL)</span></label>
+                    <input type="number" id="objetivo" value="110" min="70" max="180" step="5">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Terapia</label>
+                    <select id="terapia" onchange="toggleIOB()">
+                        <option value="MDI">MDI (Múltiples Dosis)</option>
+                        <option value="Bomba">Bomba de Insulina</option>
+                    </select>
+                </div>
+                <div class="form-group" id="iob-group" style="display:none">
+                    <label>Insulina Activa (IOB) <span class="unit">(U)</span></label>
+                    <input type="number" id="iob" value="0" min="0" max="20" step="0.1">
+                </div>
+                <div class="form-group">
+                    <div class="toggle-row">
+                        <label>¿Media unidad disponible?</label>
+                        <label class="toggle"><input type="checkbox" id="media-unidad"><span class="toggle-slider"></span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><div class="icon green">📊</div> Datos Actuales</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Glicemia Actual <span class="unit">(mg/dL)</span></label>
+                    <input type="number" id="glicemia" placeholder="ej: 180" min="20" max="600">
+                </div>
+                <div class="form-group">
+                    <label>Carbohidratos <span class="unit">(gramos)</span></label>
+                    <input type="number" id="carbohidratos" placeholder="ej: 60" min="0" max="500">
+                </div>
+                <div class="form-group full">
+                    <label>Momento</label>
+                    <div class="moment-tags" id="moment-tags-calc">
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🌅 Ayunas</span>
+                        <span class="moment-tag selected" onclick="selectMoment(this,'calc')">🍳 Desayuno</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🥗 Almuerzo</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🍝 Cena</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🍎 Snack</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🌙 Nocturno</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🔧 Corrección</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="calcularBolus()">💉 Calcular Bolus</button>
+            </div>
+        </div>
+
+        <div id="resultado"></div>
+
+        <div class="disclaimer">
+            ⚠️ Esta herramienta es solo de apoyo y NO reemplaza el consejo médico profesional.
+            Siempre consulta con tu endocrinólogo o equipo de diabetes.
+        </div>
+    </div>
+
+    <!-- ═══════════ FOODS ═══════════ -->
+    <div class="panel" id="panel-foods">
+        <div class="card">
+            <div class="card-title"><div class="icon yellow">🔍</div> Buscar Alimentos</div>
+            <div class="search-box">
+                <span class="search-icon">🔎</span>
+                <input type="text" id="food-search" placeholder="Busca un alimento... (ej: arroz, plátano, pizza)" oninput="searchFood(this.value)">
+            </div>
+            <div class="food-results" id="food-results"></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="icon green">✅</div> Mi Plato</div>
+            <div class="selected-foods" id="selected-foods">
+                <p style="color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px;">Busca y selecciona alimentos</p>
+            </div>
+            <div class="total-bar" id="total-bar" style="display:none">
+                <span class="label">Total CHO</span>
+                <span class="value" id="total-cho">0g</span>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn btn-secondary" onclick="usarCHOenCalculadora()" style="display:none" id="btn-usar-cho">
+                    🧮 Usar en la Calculadora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ PHOTO ═══════════ -->
+    <div class="panel" id="panel-photo">
+        <div class="card">
+            <div class="card-title"><div class="icon blue">📸</div> Analizar Foto de Alimentos</div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                Toma una foto de tu comida y la IA estimará los carbohidratos.
+            </p>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>API Key de Anthropic <span class="unit">(para análisis por IA)</span></label>
+                <input type="text" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+            </div>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)">
+                <div class="upload-icon">📷</div>
+                <h3>Toca para tomar foto o seleccionar imagen</h3>
+                <p>JPG, PNG — máximo 10MB</p>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn btn-primary" onclick="analizarImagen()" id="btn-analizar" disabled>🤖 Analizar con IA</button>
+            </div>
+            <div id="photo-result"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ REGISTRY ═══════════ -->
+    <div class="panel" id="panel-registry">
+        <div class="card">
+            <div class="card-title"><div class="icon green">➕</div> Registrar Manualmente</div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                Si calculaste tu bolus mentalmente o quieres registrar una medición sin calcular, usa este formulario.
+            </p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fecha y Hora</label>
+                    <input type="datetime-local" id="reg-datetime">
+                </div>
+                <div class="form-group">
+                    <label>Glicemia <span class="unit">(mg/dL)</span></label>
+                    <input type="number" id="reg-glicemia" placeholder="ej: 120" min="20" max="600">
+                </div>
+                <div class="form-group">
+                    <label>Carbohidratos <span class="unit">(g)</span></label>
+                    <input type="number" id="reg-cho" placeholder="ej: 45" min="0" max="500">
+                </div>
+                <div class="form-group">
+                    <label>Insulina Administrada <span class="unit">(U)</span></label>
+                    <input type="number" id="reg-insulin" placeholder="ej: 6" min="0" max="100" step="0.5">
+                </div>
+                <div class="form-group full">
+                    <label>Momento</label>
+                    <div class="moment-tags" id="moment-tags-reg">
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🌅 Ayunas</span>
+                        <span class="moment-tag selected" onclick="selectMoment(this,'reg')">🍳 Desayuno</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🥗 Almuerzo</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🍝 Cena</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🍎 Snack</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🌙 Nocturno</span>
+                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🔧 Corrección</span>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label>Notas <span class="unit">(opcional)</span></label>
+                    <textarea id="reg-notes" placeholder="Ej: ejercicio previo, estrés, enfermedad..."></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn btn-primary" onclick="registrarManual()">💾 Guardar Registro</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><div class="icon blue">📋</div> Historial de Registros</div>
+            <div class="period-selector">
+                <button class="period-btn active" onclick="filterLogs('7d', this)">7 días</button>
+                <button class="period-btn" onclick="filterLogs('14d', this)">14 días</button>
+                <button class="period-btn" onclick="filterLogs('30d', this)">30 días</button>
+                <button class="period-btn" onclick="filterLogs('all', this)">Todo</button>
+            </div>
+            <div class="log-table-wrapper" style="max-height: 500px; overflow-y: auto;">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Momento</th>
+                            <th>Glicemia</th>
+                            <th>CHO</th>
+                            <th>Insulina</th>
+                            <th>Notas</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-tbody"></tbody>
+                </table>
+            </div>
+            <div id="log-empty" style="text-align:center; padding: 30px; color: var(--text-dim); font-size: 13px; display:none;">
+                No hay registros aún. Calcula un bolus o registra manualmente.
+            </div>
+            <div class="btn-row" style="margin-top: 16px;">
+                <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📥 Exportar CSV</button>
+                <button class="btn btn-danger btn-sm" onclick="clearAllLogs()">🗑️ Limpiar Todo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ CHARTS ═══════════ -->
+    <div class="panel" id="panel-charts">
+        <div class="card">
+            <div class="card-title"><div class="icon purple">📈</div> Estadísticas</div>
+            <div class="period-selector">
+                <button class="period-btn active" onclick="updateCharts('7d', this)">7 días</button>
+                <button class="period-btn" onclick="updateCharts('14d', this)">14 días</button>
+                <button class="period-btn" onclick="updateCharts('30d', this)">30 días</button>
+                <button class="period-btn" onclick="updateCharts('all', this)">Todo</button>
+            </div>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card"><div class="stat-label">Promedio</div><div class="stat-value" id="stat-avg">--</div><div class="stat-sub">mg/dL</div></div>
+                <div class="stat-card"><div class="stat-label">Desv. Estándar</div><div class="stat-value" id="stat-sd">--</div><div class="stat-sub">mg/dL</div></div>
+                <div class="stat-card"><div class="stat-label">Tiempo en Rango</div><div class="stat-value" id="stat-tir" style="color: var(--success)">--</div><div class="stat-sub">70-180 mg/dL</div></div>
+                <div class="stat-card"><div class="stat-label">HbA1c Est.</div><div class="stat-value" id="stat-a1c" style="color: var(--accent)">--</div><div class="stat-sub">%</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><div class="icon blue">🩸</div> Glicemias en el Tiempo</div>
+            <div class="chart-container"><canvas id="chart-glucose"></canvas></div>
+        </div>
+
+        <div class="chart-row">
+            <div class="card">
+                <div class="card-title"><div class="icon green">💉</div> Insulina por Dosis</div>
+                <div class="chart-container"><canvas id="chart-insulin"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><div class="icon yellow">🍞</div> Carbohidratos</div>
+                <div class="chart-container"><canvas id="chart-carbs"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><div class="icon purple">🎯</div> Distribución por Momento del Día</div>
+            <div class="chart-container"><canvas id="chart-moments"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><div class="icon green">⏱️</div> Tiempo en Rango</div>
+            <div class="chart-container" style="height: 200px;"><canvas id="chart-tir"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ANALYSIS ═══════════ -->
+    <div class="panel" id="panel-analysis">
+        <div class="card">
+            <div class="card-title"><div class="icon red">🩺</div> Análisis Clínico Inteligente</div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                Un endocrinólogo virtual analiza tus registros y te da recomendaciones personalizadas.
+                Necesitas al menos 5 registros y una API key de Anthropic.
+            </p>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>API Key de Anthropic</label>
+                <input type="text" id="analysis-api-key" placeholder="sk-ant-..." autocomplete="off">
+            </div>
+            <button class="btn btn-primary" onclick="runAnalysis()" id="btn-analysis">
+                🩺 Obtener Análisis y Recomendaciones
+            </button>
+            <div id="analysis-result" style="margin-top: 20px;"></div>
+        </div>
+        <div class="disclaimer">
+            ⚠️ El análisis es generado por IA y tiene fines informativos. NO reemplaza la consulta con tu endocrinólogo.
+            Comparte estos datos con tu equipo médico para decisiones clínicas.
+        </div>
+    </div>
+
+    <!-- ═══════════ API ═══════════ -->
+    <div class="panel" id="panel-api">
+        <div class="card">
+            <div class="card-title"><div class="icon blue">⚡</div> Documentación de la API</div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                Comparte esta API con otros diabéticos. Todos los endpoints están listos para integrar.
+            </p>
+            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/bolus</span><p class="endpoint-desc">Calcula dosis de bolus de insulina</p></div>
+            <div class="endpoint-card"><span class="method get">GET</span><span class="endpoint-path">/api/v1/alimentos</span><p class="endpoint-desc">Lista todos los alimentos</p></div>
+            <div class="endpoint-card"><span class="method get">GET</span><span class="endpoint-path">/api/v1/alimentos/buscar?q=arroz</span><p class="endpoint-desc">Busca alimento por nombre</p></div>
+            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/estimar-carbohidratos</span><p class="endpoint-desc">Estima CHO por lista de alimentos</p></div>
+            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/analizar-imagen</span><p class="endpoint-desc">Analiza foto con IA</p></div>
+            <h3 style="font-size: 14px; margin: 24px 0 12px;">Ejemplo cURL</h3>
+            <pre>curl -X POST http://localhost:8000/api/v1/bolus \
+  -H "Content-Type: application/json" \
+  -d '{
+    "perfil": {
+      "nombre": "Carlos",
+      "ratio_insulina_carbohidratos": 10,
+      "factor_sensibilidad": 40,
+      "glicemia_objetivo": 110,
+      "tipo_terapia": "MDI"
+    },
+    "glicemia_actual": 180,
+    "carbohidratos": 60
+  }'</pre>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">
+                Visita <code>/docs</code> para Swagger interactivo o <code>/redoc</code> para ReDoc.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA LAYER — localStorage-based registry
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = 'glucohelper_logs';
+const SETTINGS_KEY = 'glucohelper_settings';
+
+function getLogs() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+
+function saveLogs(logs) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+}
+
+function addLog(entry) {
+    const logs = getLogs();
+    entry.id = Date.now() + Math.random().toString(36).substr(2, 5);
+    logs.push(entry);
+    logs.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+    saveLogs(logs);
+    return entry;
+}
+
+function deleteLog(id) {
+    const logs = getLogs().filter(l => l.id !== id);
+    saveLogs(logs);
+}
+
+function getFilteredLogs(period) {
+    const logs = getLogs();
+    if (period === 'all') return logs;
+    const days = parseInt(period);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return logs.filter(l => new Date(l.datetime) >= cutoff);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function switchTab(tab) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`panel-${tab}`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if (tab === 'registry') renderLogTable('7d');
+    if (tab === 'charts') updateCharts('7d');
+}
+
+function toggleIOB() {
+    document.getElementById('iob-group').style.display =
+        document.getElementById('terapia').value === 'Bomba' ? 'flex' : 'none';
+}
+
+function selectMoment(el, ctx) {
+    el.closest('.moment-tags').querySelectorAll('.moment-tag').forEach(t => t.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function getSelectedMoment(ctx) {
+    const sel = document.getElementById(`moment-tags-${ctx}`).querySelector('.moment-tag.selected');
+    return sel ? sel.textContent.trim() : 'Otro';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOLUS CALCULATOR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function calcularBolus() {
+    const ratio = parseFloat(document.getElementById('ratio').value);
+    const sensibilidad = parseFloat(document.getElementById('sensibilidad').value);
+    const objetivo = parseFloat(document.getElementById('objetivo').value);
+    const terapia = document.getElementById('terapia').value;
+    const iob = parseFloat(document.getElementById('iob').value) || 0;
+    const mediaUnidad = document.getElementById('media-unidad').checked;
+    const glicemia = parseFloat(document.getElementById('glicemia').value);
+    const cho = parseFloat(document.getElementById('carbohidratos').value);
+    const momento = getSelectedMoment('calc');
+
+    if (!glicemia || !ratio || !sensibilidad || !objetivo || isNaN(cho)) {
+        alert('Completa todos los campos requeridos'); return;
+    }
+
+    const bolusAlim = cho / ratio;
+    const dif = glicemia - objetivo;
+    const bolusCorBruto = dif / sensibilidad;
+    let bolusCor = bolusCorBruto;
+    let iobDesc = 0;
+    if (bolusCor > 0 && iob > 0) { iobDesc = Math.min(iob, bolusCor); bolusCor -= iobDesc; }
+    let total = bolusAlim + bolusCor;
+    const advertencias = [];
+
+    if (glicemia < 70) advertencias.push({type:'danger', text:'🚨 HIPOGLICEMIA < 70 mg/dL. Trata primero con 15g de CHO rápidos.'});
+    else if (glicemia < 80) advertencias.push({type:'warn', text:'⚠️ Glicemia baja. Considera reducir dosis.'});
+    if (bolusCorBruto < 0) advertencias.push({type:'info', text:`ℹ️ Glicemia bajo objetivo (${glicemia} < ${objetivo}). Se resta del bolus.`});
+    if (iobDesc > 0) advertencias.push({type:'info', text:`ℹ️ Se descontaron ${iobDesc.toFixed(2)}U de IOB.`});
+    if (total < 0) { advertencias.push({type:'warn', text:'🍬 Bolus negativo. Ingerir CHO sin insulina.'}); total = 0; }
+    if (glicemia > 300) advertencias.push({type:'danger', text:'🚨 Glicemia > 300. Verificar cetonas.'});
+
+    let rec, redTxt;
+    if (terapia === 'Bomba') { rec = Math.round(total * 20) / 20; redTxt = '0.05U (bomba)'; }
+    else if (mediaUnidad) { rec = Math.round(total * 2) / 2; redTxt = '0.5U'; }
+    else { rec = Math.round(total); redTxt = '1U'; }
+
+    if (rec > 20) advertencias.push({type:'warn', text:'⚠️ Bolus > 20U. Verifica datos.'});
+
+    // Save log
+    addLog({
+        datetime: new Date().toISOString(),
+        glicemia, cho, insulina: rec, momento,
+        notas: `Bolus calculado: ${bolusAlim.toFixed(1)}U alim + ${bolusCor.toFixed(1)}U cor = ${rec}U`,
+        source: 'calculator'
+    });
+
+    document.getElementById('resultado').innerHTML = `
+    <div class="result-card">
+        <div class="bolus-display">
+            <div class="bolus-label">Bolus Recomendado</div>
+            <div class="bolus-value">${rec}<span class="bolus-unit">U</span></div>
+            <div style="color: var(--text-dim); font-size: 13px; margin-top: 8px;">
+                Exacto: ${total.toFixed(2)}U · Redondeo: ${redTxt}
+            </div>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item"><div class="label">Alimenticio</div><div class="value" style="color:var(--accent)">${bolusAlim.toFixed(1)}U</div></div>
+            <div class="detail-item"><div class="label">Corrector</div><div class="value" style="color:${bolusCor>=0?'var(--success)':'var(--warning)'}">${bolusCor>=0?'+':''}${bolusCor.toFixed(1)}U</div></div>
+            <div class="detail-item"><div class="label">IOB</div><div class="value" style="color:var(--accent-2)">-${iobDesc.toFixed(1)}U</div></div>
+        </div>
+        <div class="formula-box">
+            <h4>Detalle del Cálculo</h4>
+            <div class="formula-line"><span class="dot blue"></span> ${cho}g ÷ ${ratio} = ${bolusAlim.toFixed(2)}U (alimenticio)</div>
+            <div class="formula-line"><span class="dot green"></span> (${glicemia} − ${objetivo}) ÷ ${sensibilidad} = ${bolusCorBruto.toFixed(2)}U (corrector)</div>
+            ${iobDesc > 0 ? `<div class="formula-line"><span class="dot purple"></span> ${bolusCorBruto.toFixed(2)}U − ${iobDesc.toFixed(2)}U IOB = ${bolusCor.toFixed(2)}U</div>` : ''}
+            <div class="formula-line"><span class="dot yellow"></span> Total: ${total.toFixed(2)}U → <strong>${rec}U</strong></div>
+        </div>
+        <div style="padding: 10px 0; color: var(--success); font-size: 13px;">✅ Registro guardado automáticamente · ${momento}</div>
+        ${advertencias.map(a => `<div class="warning-box ${a.type}">${a.text}</div>`).join('')}
+    </div>`;
+    document.getElementById('resultado').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FOOD DATABASE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const FOOD_DB = {
+    "arroz blanco cocido":{cho100:28,porcion:180},"arroz integral cocido":{cho100:23,porcion:180},
+    "pasta cocida":{cho100:25,porcion:200},"pan blanco":{cho100:49,porcion:60},
+    "pan integral":{cho100:41,porcion:60},"tortilla de maíz":{cho100:44,porcion:30},
+    "tortilla de harina":{cho100:48,porcion:45},"avena cocida":{cho100:12,porcion:240},
+    "quinoa cocida":{cho100:21,porcion:185},"cereal de desayuno":{cho100:75,porcion:40},
+    "manzana":{cho100:14,porcion:180},"plátano / banana":{cho100:23,porcion:120},
+    "naranja":{cho100:12,porcion:150},"uvas":{cho100:17,porcion:150},
+    "fresa":{cho100:8,porcion:150},"sandía":{cho100:8,porcion:280},
+    "mango":{cho100:15,porcion:200},"piña":{cho100:13,porcion:165},
+    "papa / patata cocida":{cho100:17,porcion:200},"papa / patata frita":{cho100:36,porcion:150},
+    "camote / batata":{cho100:20,porcion:150},"frijoles / judías cocidos":{cho100:22,porcion:170},
+    "lentejas cocidas":{cho100:20,porcion:200},"garbanzos cocidos":{cho100:27,porcion:165},
+    "leche entera":{cho100:5,porcion:240},"yogur natural":{cho100:5,porcion:200},
+    "yogur con fruta":{cho100:15,porcion:200},"helado":{cho100:24,porcion:100},
+    "jugo de naranja":{cho100:10,porcion:250},"refresco / soda":{cho100:11,porcion:350},
+    "cerveza":{cho100:3.5,porcion:350},"pizza (1 porción)":{cho100:33,porcion:120},
+    "hamburguesa con pan":{cho100:20,porcion:200},"sushi (6 piezas)":{cho100:30,porcion:180},
+    "empanada":{cho100:30,porcion:120},"tacos (2 unidades)":{cho100:22,porcion:200},
+    "galletas":{cho100:65,porcion:30},"chocolate con leche":{cho100:56,porcion:40},
+    "barra de granola":{cho100:60,porcion:35},"pollo":{cho100:0,porcion:150},
+    "carne de res":{cho100:0,porcion:150},"pescado":{cho100:0,porcion:150},
+    "huevo":{cho100:1,porcion:50},"queso":{cho100:1.3,porcion:30},
+    "ensalada verde":{cho100:2,porcion:150},"tomate":{cho100:4,porcion:120},
+    "zanahoria":{cho100:10,porcion:80},"brócoli":{cho100:7,porcion:150},
+    "maíz / elote":{cho100:19,porcion:150},
+};
+
+function searchFood(query) {
+    const c = document.getElementById('food-results');
+    if (!query || query.length < 2) { c.innerHTML = ''; return; }
+    const q = query.toLowerCase();
+    const matches = Object.entries(FOOD_DB).filter(([n]) => n.includes(q)).map(([name, d]) => {
+        const cho = (d.cho100 * d.porcion / 100).toFixed(1);
+        return `<div class="food-item" onclick="addFood('${name}',${cho},${d.porcion})">
+            <div><div class="name">${name}</div><div class="portion">${d.porcion}g · ${d.cho100}g/100g</div></div>
+            <div class="cho">${cho}g</div></div>`;
+    });
+    c.innerHTML = matches.length ? matches.join('') : '<p style="color:var(--text-dim);padding:16px;text-align:center">No encontrado</p>';
+}
+
+let selectedFoods = [];
+function addFood(n, c, p) { selectedFoods.push({name:n,cho:parseFloat(c),porcion:p}); renderSelectedFoods(); }
+function removeFood(i) { selectedFoods.splice(i, 1); renderSelectedFoods(); }
+function renderSelectedFoods() {
+    const c = document.getElementById('selected-foods');
+    const tb = document.getElementById('total-bar');
+    const btn = document.getElementById('btn-usar-cho');
+    if (!selectedFoods.length) {
+        c.innerHTML = '<p style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">Busca y selecciona alimentos</p>';
+        tb.style.display = 'none'; btn.style.display = 'none'; return;
+    }
+    const total = selectedFoods.reduce((s, f) => s + f.cho, 0);
+    c.innerHTML = selectedFoods.map((f, i) => `<div class="selected-food"><div class="info"><span class="name">${f.name}</span><span class="cho">${f.cho}g</span></div><button class="remove-food" onclick="removeFood(${i})">✕</button></div>`).join('');
+    tb.style.display = 'flex'; document.getElementById('total-cho').textContent = `${total.toFixed(1)}g`;
+    btn.style.display = 'block';
+}
+function usarCHOenCalculadora() {
+    document.getElementById('carbohidratos').value = Math.round(selectedFoods.reduce((s,f) => s+f.cho, 0));
+    switchTab('calculator'); document.getElementById('glicemia').focus();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHOTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let selectedImage = null;
+function handleImage(input) {
+    const file = input.files[0]; if (!file) return;
+    selectedImage = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const zone = document.getElementById('upload-zone');
+        zone.classList.add('has-image');
+        zone.innerHTML = `<img src="${e.target.result}"><input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)" style="display:none">`;
+        document.getElementById('btn-analizar').disabled = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function analizarImagen() {
+    if (!selectedImage) return;
+    const apiKey = document.getElementById('api-key').value.trim();
+    const btn = document.getElementById('btn-analizar');
+    const rd = document.getElementById('photo-result');
+    btn.disabled = true; btn.textContent = '⏳ Analizando...';
+    if (!apiKey) {
+        rd.innerHTML = `<div class="result-card" style="margin-top:20px"><p style="color:var(--text-muted)">Necesitas una API key de Anthropic para análisis por IA. Obtén una en <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p></div>`;
+        btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; return;
+    }
+    try {
+        const base64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(selectedImage); });
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+            body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,messages:[{role:'user',content:[
+                {type:'image',source:{type:'base64',media_type:selectedImage.type||'image/jpeg',data:base64}},
+                {type:'text',text:'Eres nutricionista experto en conteo de carbohidratos para diabetes. Analiza esta imagen y responde SOLO JSON (sin markdown):\n{"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_estimados":0}],"carbohidratos_totales":0,"confianza":"alta|media|baja","notas":"..."}'}
+            ]}]})
+        });
+        const data = await res.json();
+        if (data.content?.[0]) {
+            const result = JSON.parse(data.content[0].text);
+            rd.innerHTML = `<div class="result-card" style="margin-top:20px">
+                <div class="bolus-display"><div class="bolus-label">CHO Estimados</div><div class="bolus-value">${result.carbohidratos_totales}<span class="bolus-unit">g</span></div><div style="color:var(--text-dim);font-size:13px;margin-top:4px">Confianza: ${result.confianza}</div></div>
+                ${result.alimentos.map(a => `<div class="selected-food"><div class="info"><span class="name">${a.nombre}</span><span style="color:var(--text-dim);font-size:12px">${a.porcion_estimada_g}g</span></div><span class="cho">${a.cho_estimados}g</span></div>`).join('')}
+                <div style="margin-top:16px"><button class="btn btn-secondary" onclick="document.getElementById('carbohidratos').value=${result.carbohidratos_totales};switchTab('calculator');">🧮 Usar en Calculadora</button></div>
+                ${result.notas ? `<div class="warning-box info" style="margin-top:12px">${result.notas}</div>` : ''}</div>`;
+        } else if (data.error) rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${data.error.message}</div>`;
+    } catch(e) { rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${e.message}</div>`; }
+    btn.disabled = false; btn.textContent = '🤖 Analizar con IA';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REGISTRY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function setDefaultDatetime() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('reg-datetime').value = now.toISOString().slice(0, 16);
+}
+
+function registrarManual() {
+    const dt = document.getElementById('reg-datetime').value;
+    const gl = parseFloat(document.getElementById('reg-glicemia').value);
+    const ch = parseFloat(document.getElementById('reg-cho').value) || 0;
+    const ins = parseFloat(document.getElementById('reg-insulin').value) || 0;
+    const mom = getSelectedMoment('reg');
+    const notas = document.getElementById('reg-notes').value.trim();
+
+    if (!dt || !gl) { alert('Ingresa al menos fecha/hora y glicemia'); return; }
+
+    addLog({ datetime: new Date(dt).toISOString(), glicemia: gl, cho: ch, insulina: ins, momento: mom, notas: notas || '', source: 'manual' });
+
+    document.getElementById('reg-glicemia').value = '';
+    document.getElementById('reg-cho').value = '';
+    document.getElementById('reg-insulin').value = '';
+    document.getElementById('reg-notes').value = '';
+    setDefaultDatetime();
+    renderLogTable('7d');
+    alert('✅ Registro guardado');
+}
+
+let currentLogPeriod = '7d';
+function filterLogs(period, btn) {
+    currentLogPeriod = period;
+    if (btn) { btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+    renderLogTable(period);
+}
+
+function renderLogTable(period) {
+    const logs = getFilteredLogs(period === 'all' ? 'all' : parseInt(period));
+    const tbody = document.getElementById('log-tbody');
+    const empty = document.getElementById('log-empty');
+
+    if (!logs.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = logs.map(l => {
+        const d = new Date(l.datetime);
+        const gBadge = l.glicemia < 70 ? 'badge-low' : l.glicemia <= 180 ? 'badge-normal' : l.glicemia <= 250 ? 'badge-high' : 'badge-very-high';
+        return `<tr>
+            <td>${d.toLocaleDateString('es')}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</td>
+            <td><span style="font-size:12px">${l.momento||'—'}</span></td>
+            <td><span class="badge ${gBadge}">${l.glicemia} mg/dL</span></td>
+            <td style="font-family:'JetBrains Mono',monospace">${l.cho||'—'}g</td>
+            <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${l.insulina||'—'}U</td>
+            <td style="font-size:12px;color:var(--text-dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notas||''}</td>
+            <td><button class="del-btn" onclick="if(confirm('¿Eliminar?')){deleteLog('${l.id}');renderLogTable('${currentLogPeriod}')}">🗑</button></td>
+        </tr>`;
+    }).join('');
+}
+
+function exportCSV() {
+    const logs = getLogs();
+    if (!logs.length) { alert('No hay registros'); return; }
+    const header = 'Fecha,Hora,Momento,Glicemia_mgdL,CHO_g,Insulina_U,Notas\n';
+    const rows = logs.map(l => {
+        const d = new Date(l.datetime);
+        return `${d.toLocaleDateString('es')},${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})},${(l.momento||'').replace(/,/g,' ')},${l.glicemia},${l.cho||0},${l.insulina||0},"${(l.notas||'').replace(/"/g,"'")}"`;
+    }).join('\n');
+    const blob = new Blob([header + rows], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `glucohelper_registros_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+
+function clearAllLogs() {
+    if (confirm('¿Estás seguro de eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
+        saveLogs([]); renderLogTable(currentLogPeriod);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let chartGlucose, chartInsulin, chartCarbs, chartMoments, chartTIR;
+let currentChartPeriod = '7d';
+
+function updateCharts(period, btn) {
+    currentChartPeriod = period;
+    if (btn) { btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+    const logs = getFilteredLogs(period === 'all' ? 'all' : parseInt(period)).slice().reverse();
+
+    // Stats
+    const gValues = logs.map(l => l.glicemia).filter(g => g);
+    if (gValues.length) {
+        const avg = gValues.reduce((a, b) => a + b, 0) / gValues.length;
+        const sd = Math.sqrt(gValues.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / gValues.length);
+        const tir = (gValues.filter(v => v >= 70 && v <= 180).length / gValues.length * 100);
+        const a1c = ((avg + 46.7) / 28.7);
+        document.getElementById('stat-avg').textContent = Math.round(avg);
+        document.getElementById('stat-sd').textContent = Math.round(sd);
+        document.getElementById('stat-tir').textContent = tir.toFixed(0) + '%';
+        document.getElementById('stat-tir').style.color = tir >= 70 ? 'var(--success)' : tir >= 50 ? 'var(--warning)' : 'var(--danger)';
+        document.getElementById('stat-a1c').textContent = a1c.toFixed(1);
+        document.getElementById('stat-a1c').style.color = a1c <= 7 ? 'var(--success)' : a1c <= 8 ? 'var(--warning)' : 'var(--danger)';
+    } else {
+        ['stat-avg','stat-sd','stat-tir','stat-a1c'].forEach(id => document.getElementById(id).textContent = '--');
+    }
+
+    const labels = logs.map(l => new Date(l.datetime));
+    const gData = logs.map(l => l.glicemia);
+    const iData = logs.map(l => l.insulina || 0);
+    const cData = logs.map(l => l.cho || 0);
+
+    const gridColor = 'rgba(255,255,255,0.06)';
+    const tickColor = '#64748b';
+
+    // Glucose Chart
+    if (chartGlucose) chartGlucose.destroy();
+    chartGlucose = new Chart(document.getElementById('chart-glucose'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Glicemia (mg/dL)',
+                data: gData,
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56,189,248,0.1)',
+                fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
+                pointBackgroundColor: gData.map(v => v < 70 ? '#f87171' : v > 180 ? '#fbbf24' : '#34d399'),
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                annotation: {},
+            },
+            scales: {
+                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
+                y: { min: 40, max: 400, ticks: { color: tickColor }, grid: { color: gridColor } }
+            }
+        },
+        plugins: [{
+            id: 'targetRange',
+            beforeDraw(chart) {
+                const {ctx, chartArea: {left, right}, scales: {y}} = chart;
+                const top70 = y.getPixelForValue(180);
+                const bot70 = y.getPixelForValue(70);
+                ctx.fillStyle = 'rgba(52,211,153,0.08)';
+                ctx.fillRect(left, top70, right - left, bot70 - top70);
+                ctx.strokeStyle = 'rgba(52,211,153,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([5,5]);
+                ctx.beginPath(); ctx.moveTo(left, top70); ctx.lineTo(right, top70); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(left, bot70); ctx.lineTo(right, bot70); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }]
+    });
+
+    // Insulin Chart
+    if (chartInsulin) chartInsulin.destroy();
+    chartInsulin = new Chart(document.getElementById('chart-insulin'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Insulina (U)', data: iData,
+                backgroundColor: 'rgba(129,140,248,0.6)',
+                borderColor: '#818cf8', borderWidth: 1, borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
+                y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } }
+            }
+        }
+    });
+
+    // Carbs Chart
+    if (chartCarbs) chartCarbs.destroy();
+    chartCarbs = new Chart(document.getElementById('chart-carbs'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'CHO (g)', data: cData,
+                backgroundColor: 'rgba(251,191,36,0.5)',
+                borderColor: '#fbbf24', borderWidth: 1, borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
+                y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } }
+            }
+        }
+    });
+
+    // Moments chart
+    const momentGroups = {};
+    logs.forEach(l => {
+        const m = l.momento || 'Otro';
+        if (!momentGroups[m]) momentGroups[m] = [];
+        if (l.glicemia) momentGroups[m].push(l.glicemia);
+    });
+    const momentLabels = Object.keys(momentGroups);
+    const momentAvgs = momentLabels.map(m => momentGroups[m].length ? Math.round(momentGroups[m].reduce((a,b)=>a+b,0)/momentGroups[m].length) : 0);
+    const momentColors = momentLabels.map((_, i) => ['#38bdf8','#34d399','#fbbf24','#f87171','#818cf8','#a78bfa','#fb923c'][i % 7]);
+
+    if (chartMoments) chartMoments.destroy();
+    chartMoments = new Chart(document.getElementById('chart-moments'), {
+        type: 'bar',
+        data: {
+            labels: momentLabels,
+            datasets: [{
+                label: 'Promedio Glicemia',
+                data: momentAvgs,
+                backgroundColor: momentColors.map(c => c + '80'),
+                borderColor: momentColors, borderWidth: 2, borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, max: 300, ticks: { color: tickColor }, grid: { color: gridColor } },
+                y: { ticks: { color: tickColor }, grid: { display: false } }
+            }
+        }
+    });
+
+    // TIR Chart
+    if (gValues.length) {
+        const low = gValues.filter(v => v < 70).length;
+        const inRange = gValues.filter(v => v >= 70 && v <= 180).length;
+        const high = gValues.filter(v => v > 180 && v <= 250).length;
+        const vHigh = gValues.filter(v => v > 250).length;
+        const total = gValues.length;
+
+        if (chartTIR) chartTIR.destroy();
+        chartTIR = new Chart(document.getElementById('chart-tir'), {
+            type: 'bar',
+            data: {
+                labels: ['Distribución'],
+                datasets: [
+                    { label: `Hipo <70 (${(low/total*100).toFixed(0)}%)`, data: [low/total*100], backgroundColor: '#f87171' },
+                    { label: `En rango 70-180 (${(inRange/total*100).toFixed(0)}%)`, data: [inRange/total*100], backgroundColor: '#34d399' },
+                    { label: `Alto 180-250 (${(high/total*100).toFixed(0)}%)`, data: [high/total*100], backgroundColor: '#fbbf24' },
+                    { label: `Muy alto >250 (${(vHigh/total*100).toFixed(0)}%)`, data: [vHigh/total*100], backgroundColor: '#ef4444' },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 } } } },
+                scales: {
+                    x: { stacked: true, max: 100, ticks: { color: tickColor, callback: v => v+'%' }, grid: { color: gridColor } },
+                    y: { stacked: true, display: false }
+                }
+            }
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI ANALYSIS — Endocrinologist Mode
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function runAnalysis() {
+    const apiKey = document.getElementById('analysis-api-key').value.trim();
+    const logs = getLogs();
+    const rd = document.getElementById('analysis-result');
+    const btn = document.getElementById('btn-analysis');
+
+    if (!apiKey) { alert('Ingresa tu API key de Anthropic'); return; }
+    if (logs.length < 5) { alert('Necesitas al menos 5 registros para un análisis significativo. Actualmente tienes ' + logs.length + '.'); return; }
+
+    btn.disabled = true;
+    rd.innerHTML = `<div class="analysis-loading"><div class="spinner"></div><p>Analizando ${logs.length} registros...</p><p style="font-size:12px;margin-top:4px">El endocrinólogo virtual está revisando tus datos</p></div>`;
+
+    // Compute stats
+    const gVals = logs.map(l => l.glicemia).filter(g => g);
+    const avg = gVals.reduce((a,b) => a+b, 0) / gVals.length;
+    const sd = Math.sqrt(gVals.reduce((s,v) => s + Math.pow(v-avg, 2), 0) / gVals.length);
+    const tir = (gVals.filter(v => v >= 70 && v <= 180).length / gVals.length * 100).toFixed(1);
+    const tirLow = (gVals.filter(v => v < 70).length / gVals.length * 100).toFixed(1);
+    const tirHigh = (gVals.filter(v => v > 180).length / gVals.length * 100).toFixed(1);
+    const a1c = ((avg + 46.7) / 28.7).toFixed(1);
+    const totalInsulin = logs.reduce((s, l) => s + (l.insulina || 0), 0);
+    const totalCHO = logs.reduce((s, l) => s + (l.cho || 0), 0);
+
+    // Group by moment
+    const byMoment = {};
+    logs.forEach(l => {
+        const m = l.momento || 'Otro';
+        if (!byMoment[m]) byMoment[m] = { glicemias: [], insulinas: [], chos: [] };
+        if (l.glicemia) byMoment[m].glicemias.push(l.glicemia);
+        if (l.insulina) byMoment[m].insulinas.push(l.insulina);
+        if (l.cho) byMoment[m].chos.push(l.cho);
+    });
+    const momentSummary = Object.entries(byMoment).map(([m, d]) => {
+        const avgG = d.glicemias.length ? Math.round(d.glicemias.reduce((a,b)=>a+b,0)/d.glicemias.length) : 'N/A';
+        const avgI = d.insulinas.length ? (d.insulinas.reduce((a,b)=>a+b,0)/d.insulinas.length).toFixed(1) : 'N/A';
+        const avgC = d.chos.length ? Math.round(d.chos.reduce((a,b)=>a+b,0)/d.chos.length) : 'N/A';
+        return `${m}: promGlicemia=${avgG}mg/dL, promInsulina=${avgI}U, promCHO=${avgC}g (n=${d.glicemias.length})`;
+    }).join('\n');
+
+    // Recent 30 entries detail
+    const recentDetail = logs.slice(0, 30).map(l => {
+        const d = new Date(l.datetime);
+        return `${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})} | ${l.momento||'?'} | Glic:${l.glicemia} | CHO:${l.cho||0}g | Ins:${l.insulina||0}U${l.notas ? ' | Nota:'+l.notas : ''}`;
+    }).join('\n');
+
+    // Settings
+    const ratio = document.getElementById('ratio').value;
+    const sensi = document.getElementById('sensibilidad').value;
+    const objetivo = document.getElementById('objetivo').value;
+    const terapia = document.getElementById('terapia').value;
+
+    const prompt = `Eres un endocrinólogo con 30 años de experiencia especializado en diabetes tipo 1. Un paciente comparte contigo sus registros glicémicos para que los analices a fondo y le des recomendaciones clínicas claras y accionables.
+
+CONFIGURACIÓN ACTUAL DEL PACIENTE:
+- Ratio I:CHO = 1:${ratio}
+- Factor de sensibilidad = ${sensi} mg/dL por unidad
+- Glicemia objetivo = ${objetivo} mg/dL
+- Terapia = ${terapia}
+
+ESTADÍSTICAS GLOBALES (${logs.length} registros):
+- Promedio glicemia: ${Math.round(avg)} mg/dL
+- Desviación estándar: ${Math.round(sd)} mg/dL
+- Coeficiente de variación: ${(sd/avg*100).toFixed(1)}%
+- Tiempo en rango (70-180): ${tir}%
+- Tiempo en hipoglicemia (<70): ${tirLow}%
+- Tiempo en hiperglicemia (>180): ${tirHigh}%
+- HbA1c estimada: ${a1c}%
+- Insulina total del periodo: ${totalInsulin.toFixed(1)}U
+- CHO totales del periodo: ${totalCHO}g
+
+PROMEDIOS POR MOMENTO DEL DÍA:
+${momentSummary}
+
+REGISTROS DETALLADOS (últimos 30):
+${recentDetail}
+
+INSTRUCCIONES:
+Responde en español con formato HTML (usa <h3> para secciones y <p> para párrafos, <strong> para énfasis). NO uses markdown. Estructura tu análisis así:
+
+1. RESUMEN EJECUTIVO: Evaluación general del control glucémico en 2-3 oraciones directas.
+
+2. ANÁLISIS DE PATRONES: Identifica patrones específicos por momento del día. ¿Hay hiperglicemias recurrentes post-prandiales? ¿Hipoglicemias nocturnas? ¿Variabilidad excesiva? Sé específico con los datos.
+
+3. EVALUACIÓN DE RATIOS: Basándote en los datos, evalúa si el ratio I:CHO y el factor de sensibilidad parecen adecuados. Si los post-prandiales están consistentemente altos en cierto momento, sugiere ajustes concretos con números.
+
+4. RECOMENDACIONES CLÍNICAS: Da entre 3 y 6 recomendaciones CONCRETAS, priorizadas, con números específicos. Por ejemplo: "Considera ajustar el ratio del almuerzo de 1:${ratio} a 1:X" o "Tu factor de sensibilidad podría necesitar cambiar a X".
+
+5. ALERTAS DE SEGURIDAD: Si hay hipoglicemias frecuentes, patrones peligrosos, o variabilidad extrema, destácalos con urgencia.
+
+6. PLAN DE ACCIÓN: 3 acciones concretas que el paciente puede implementar esta semana.
+
+Recuerda: habla como un endocrinólogo experimentado hablándole directamente a su paciente con confianza y claridad. Sé directo, específico y útil. Al final, recuerda que estas son recomendaciones orientativas y que debe validarlas con su equipo médico presencial.`;
+
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await res.json();
+        if (data.content?.[0]?.text) {
+            rd.innerHTML = `<div class="result-card"><div class="analysis-content">${data.content[0].text}</div></div>`;
+        } else if (data.error) {
+            rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${data.error.message}</div>`;
+        }
+    } catch(e) {
+        rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error de conexión: ${e.message}</div>`;
+    }
+    btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETTINGS PERSISTENCE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+            ratio: document.getElementById('ratio').value,
+            sensibilidad: document.getElementById('sensibilidad').value,
+            objetivo: document.getElementById('objetivo').value,
+            terapia: document.getElementById('terapia').value,
+            mediaUnidad: document.getElementById('media-unidad').checked,
+        }));
+    } catch(e) {}
+}
+
+function loadSettings() {
+    try {
+        const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+        if (s) {
+            document.getElementById('ratio').value = s.ratio || 10;
+            document.getElementById('sensibilidad').value = s.sensibilidad || 40;
+            document.getElementById('objetivo').value = s.objetivo || 110;
+            document.getElementById('terapia').value = s.terapia || 'MDI';
+            document.getElementById('media-unidad').checked = s.mediaUnidad || false;
+            toggleIOB();
+        }
+    } catch(e) {}
+}
+
+document.querySelectorAll('#ratio,#sensibilidad,#objetivo,#terapia,#media-unidad').forEach(el => el.addEventListener('change', saveSettings));
+loadSettings();
+setDefaultDatetime();
+</script>
+
+</body>
+</html>
