@@ -351,7 +351,7 @@ Si es una comida preparada (no fruta/verdura individual), el usuario te dice qu�
 
 Responde SOLO JSON válido sin markdown:
 {"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_estimados":0}],"carbohidratos_totales":0,"confianza":"alta|media|baja","moneda_detectada":true/false,"notas":"..."}`}]}]})});
-const data=await res.json();if(data.content?.[0]){const result=JSON.parse(data.content[0].text);
+const data=await res.json();if(data.content?.[0]){let raw=data.content[0].text.trim();raw=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');const result=JSON.parse(raw);
 rd.innerHTML=`<div class="rc" style="margin-top:14px"><div class="bd2"><div class="bl">CHO estimados</div><div class="bv">${result.carbohidratos_totales}<span class="bu"> g</span></div><div style="color:var(--muted);font-size:11px;margin-top:3px">Confianza: ${result.confianza}</div></div>
 ${result.alimentos.map(a=>`<div class="sf"><div style="display:flex;align-items:center;gap:8px"><span class="sn2">${a.nombre}</span><span style="color:var(--muted);font-size:10px">${a.porcion_estimada_g}g</span></div><span class="sc">${a.cho_estimados}g</span></div>`).join('')}
 ${result.moneda_detectada?'<div class="al al-s">✓ Moneda detectada como escala</div>':'<div class="al al-i">Sin moneda de referencia</div>'}
