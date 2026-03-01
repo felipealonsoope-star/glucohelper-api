@@ -3,1439 +3,887 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GlucoHelper — Calculadora de Bolus para Diabéticos</title>
+    <title>GlucoHelper — Tu asistente para diabetes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         :root {
-            --bg: #0a0e17;
-            --bg-card: #111827;
-            --bg-card-hover: #1a2234;
-            --bg-input: #0d1321;
-            --border: #1e2a3a;
-            --border-focus: #38bdf8;
-            --text: #e2e8f0;
-            --text-muted: #64748b;
-            --text-dim: #475569;
-            --accent: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.15);
-            --accent-2: #818cf8;
-            --success: #34d399;
-            --success-bg: rgba(52, 211, 153, 0.1);
-            --warning: #fbbf24;
-            --warning-bg: rgba(251, 191, 36, 0.1);
-            --danger: #f87171;
-            --danger-bg: rgba(248, 113, 113, 0.1);
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            --bg: #f0f4f7;
+            --bg-white: #ffffff;
+            --bg-subtle: #f7f9fb;
+            --bg-teal-light: #e8f6f8;
+            --bg-teal-muted: #d0eef2;
+            --border: #dce4ea;
+            --border-focus: #1a9aaa;
+            --text: #1a2b3c;
+            --text-secondary: #526878;
+            --text-muted: #8899a8;
+            --teal: #1a9aaa;
+            --teal-dark: #14808e;
+            --teal-light: #28b8ca;
+            --teal-bg: rgba(26, 154, 170, 0.08);
+            --green: #2d9f6f;
+            --green-bg: rgba(45, 159, 111, 0.08);
+            --green-light: #e6f5ee;
+            --orange: #d68c2e;
+            --orange-bg: rgba(214, 140, 46, 0.08);
+            --orange-light: #fef4e6;
+            --red: #c94a4a;
+            --red-bg: rgba(201, 74, 74, 0.08);
+            --red-light: #fce8e8;
+            --purple: #7c6bb4;
+            --purple-bg: rgba(124, 107, 180, 0.08);
+            --blue-soft: #5b8fd9;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
             line-height: 1.6;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background:
-                radial-gradient(ellipse at 20% 50%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(129, 140, 248, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
-            z-index: -1;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* ─── Header ─── */
         .header {
-            padding: 24px 0 16px;
+            background: linear-gradient(135deg, #1a9aaa 0%, #14808e 100%);
+            padding: 20px 0 18px;
             text-align: center;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 32px;
-            position: relative;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 16px rgba(26,154,170,0.25);
         }
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px; left: 50%;
-            transform: translateX(-50%);
-            width: 120px; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-        }
-        .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
-        .logo-icon {
-            width: 44px; height: 44px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
-        }
-        .logo h1 {
-            font-size: 28px; font-weight: 700;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
-        .header p { color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+        .logo { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .logo svg { width: 30px; height: 30px; fill: white; opacity: 0.95; }
+        .logo h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+        .header .subtitle { font-size: 12px; opacity: 0.8; margin-top: 2px; font-weight: 400; }
 
-        /* ─── Layout ─── */
-        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
+        .container { max-width: 520px; margin: 0 auto; padding: 16px 16px 80px; }
 
-        /* ─── Tabs ─── */
-        .tabs {
-            display: flex; gap: 4px;
-            background: var(--bg-card); padding: 4px;
-            border-radius: var(--radius); margin-bottom: 28px;
+        /* ─── Nav Tabs ─── */
+        .nav {
+            display: flex; gap: 3px;
+            background: var(--bg-white);
+            padding: 4px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
             border: 1px solid var(--border);
             overflow-x: auto;
         }
-        .tab {
-            flex: 1; padding: 12px 10px;
+        .nav-btn {
+            flex: 1; padding: 10px 6px;
             border: none; background: transparent;
             color: var(--text-muted); font-family: inherit;
-            font-size: 13px; font-weight: 500;
+            font-size: 11px; font-weight: 600;
             border-radius: var(--radius-sm); cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            white-space: nowrap;
+            transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            white-space: nowrap; min-width: 0;
         }
-        .tab:hover { color: var(--text); background: var(--bg-card-hover); }
-        .tab.active {
-            background: var(--accent); color: #0a0e17;
-            font-weight: 600; box-shadow: 0 2px 12px rgba(56, 189, 248, 0.3);
+        .nav-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .nav-btn:hover { color: var(--teal); background: var(--teal-bg); }
+        .nav-btn.active {
+            background: var(--teal);
+            color: white;
+            box-shadow: 0 2px 8px rgba(26,154,170,0.3);
         }
-        .tab-icon { font-size: 15px; }
+        .nav-btn.active svg { fill: white; }
+        .nav-btn svg { fill: var(--text-muted); transition: fill 0.2s; }
+        .nav-btn:hover svg { fill: var(--teal); }
 
         /* ─── Panels ─── */
-        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel { display: none; animation: fadeIn 0.25s ease; }
         .panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ─── Cards ─── */
         .card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 24px;
-            margin-bottom: 20px; box-shadow: var(--shadow);
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
         }
-        .card-title {
-            font-size: 16px; font-weight: 600; color: var(--text);
-            margin-bottom: 20px;
+        .card-header {
             display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
-        .card-title .icon {
-            width: 32px; height: 32px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        .card-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
-        .card-title .icon.blue { background: var(--accent-glow); }
-        .card-title .icon.green { background: var(--success-bg); }
-        .card-title .icon.yellow { background: var(--warning-bg); }
-        .card-title .icon.red { background: var(--danger-bg); }
-        .card-title .icon.purple { background: rgba(129, 140, 248, 0.12); }
+        .card-icon svg { width: 18px; height: 18px; }
+        .card-icon.teal { background: var(--teal-bg); }
+        .card-icon.teal svg { fill: var(--teal); }
+        .card-icon.green { background: var(--green-bg); }
+        .card-icon.green svg { fill: var(--green); }
+        .card-icon.orange { background: var(--orange-bg); }
+        .card-icon.orange svg { fill: var(--orange); }
+        .card-icon.red { background: var(--red-bg); }
+        .card-icon.red svg { fill: var(--red); }
+        .card-icon.purple { background: var(--purple-bg); }
+        .card-icon.purple svg { fill: var(--purple); }
+        .card-title { font-size: 15px; font-weight: 600; color: var(--text); }
+        .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 
         /* ─── Forms ─── */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group.full { grid-column: 1 / -1; }
-
-        label { font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
-        label .unit { color: var(--text-dim); font-weight: 400; }
-
+        label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        label .unit { font-weight: 400; color: var(--text-muted); }
         input[type="number"], input[type="text"], input[type="datetime-local"], select, textarea {
-            background: var(--bg-input); border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--border);
             color: var(--text); font-family: 'JetBrains Mono', monospace;
-            font-size: 14px; padding: 10px 14px;
+            font-size: 15px; padding: 11px 14px;
             border-radius: var(--radius-sm); outline: none;
-            transition: all 0.2s ease; width: 100%;
+            transition: all 0.2s; width: 100%;
         }
-        textarea { font-family: 'DM Sans', sans-serif; resize: vertical; min-height: 60px; }
-        input:focus, select:focus, textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
-        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+        textarea { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; resize: vertical; min-height: 50px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-bg); background: white; }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; }
+        select { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; }
 
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
-        .toggle { position: relative; width: 44px; height: 24px; }
-        .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute; cursor: pointer;
+        /* ─── Help Button ─── */
+        .help-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; color: var(--teal); font-weight: 600;
+            cursor: pointer; margin-top: 4px; text-decoration: none;
+            background: none; border: none; padding: 0; font-family: inherit;
+        }
+        .help-link:hover { text-decoration: underline; }
+        .help-link svg { width: 14px; height: 14px; fill: var(--teal); }
+
+        /* ─── Help Modal ─── */
+        .modal-overlay {
+            display: none; position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--border); border-radius: 12px; transition: 0.3s;
+            background: rgba(0,0,0,0.4); z-index: 200;
+            align-items: center; justify-content: center;
+            padding: 20px;
         }
-        .toggle-slider::before {
-            content: ''; position: absolute;
-            height: 18px; width: 18px; left: 3px; bottom: 3px;
-            background: var(--text); border-radius: 50%; transition: 0.3s;
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white; border-radius: var(--radius);
+            padding: 24px; max-width: 480px; width: 100%;
+            max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: modalIn 0.25s ease;
         }
-        .toggle input:checked + .toggle-slider { background: var(--accent); }
-        .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal h3 { font-size: 17px; color: var(--text); margin-bottom: 12px; }
+        .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.7; }
+        .modal .example-box {
+            background: var(--bg-teal-light); border-radius: var(--radius-sm);
+            padding: 14px; margin: 12px 0; font-size: 13px; color: var(--teal-dark);
+            border-left: 3px solid var(--teal);
+        }
+        .modal .example-box strong { color: var(--teal-dark); }
+        .modal .step { display: flex; gap: 10px; margin-bottom: 14px; }
+        .modal .step-num {
+            width: 24px; height: 24px; background: var(--teal);
+            color: white; border-radius: 50%; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .modal .step-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+        .modal-close {
+            background: var(--teal); color: white; border: none;
+            padding: 10px 24px; border-radius: var(--radius-sm);
+            font-family: inherit; font-size: 14px; font-weight: 600;
+            cursor: pointer; width: 100%; margin-top: 16px;
+        }
+
+        /* ─── Moment Tags ─── */
+        .moment-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .moment-tag {
+            padding: 6px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+            border: 1.5px solid var(--border); background: white; color: var(--text-secondary);
+            font-family: inherit;
+        }
+        .moment-tag:hover { border-color: var(--teal); color: var(--teal); }
+        .moment-tag.selected { background: var(--teal); color: white; border-color: var(--teal); }
 
         /* ─── Buttons ─── */
         .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 12px 24px; border: none; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 13px 24px; border: none; border-radius: var(--radius-sm);
             font-family: inherit; font-size: 14px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease; width: 100%;
+            cursor: pointer; transition: all 0.2s; width: 100%;
         }
+        .btn svg { width: 18px; height: 18px; }
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #0a0e17; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            color: white; box-shadow: 0 3px 12px rgba(26,154,170,0.3);
         }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(56, 189, 248, 0.4); }
+        .btn-primary:hover { box-shadow: 0 4px 18px rgba(26,154,170,0.4); transform: translateY(-1px); }
         .btn-primary:active { transform: translateY(0); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-secondary { background: var(--bg-card-hover); color: var(--text); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: var(--border); }
-        .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
-        .btn-danger:hover { background: rgba(248,113,113,0.2); }
+        .btn-primary svg { fill: white; }
+        .btn-outline {
+            background: white; color: var(--teal); border: 1.5px solid var(--teal);
+        }
+        .btn-outline:hover { background: var(--teal-bg); }
+        .btn-outline svg { fill: var(--teal); }
+        .btn-soft { background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-soft:hover { background: var(--border); }
+        .btn-danger-soft { background: var(--red-light); color: var(--red); border: 1px solid rgba(201,74,74,0.2); }
         .btn-sm { padding: 8px 14px; font-size: 12px; }
-        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-row { display: flex; gap: 8px; margin-top: 14px; }
         .btn-row .btn { flex: 1; }
 
-        /* ─── Results ─── */
+        /* ─── Result ─── */
         .result-card {
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(129, 140, 248, 0.05));
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            border-radius: var(--radius); padding: 28px;
-            margin-top: 24px; animation: slideUp 0.4s ease;
+            background: white; border: 1.5px solid rgba(26,154,170,0.2);
+            border-radius: var(--radius); padding: 24px;
+            margin-top: 20px; box-shadow: var(--shadow-md);
+            animation: slideUp 0.3s ease;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bolus-display { text-align: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-        .bolus-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 8px; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .bolus-display { text-align: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .bolus-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
         .bolus-value {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 52px; font-weight: 700;
-            background: linear-gradient(135deg, var(--accent), var(--success));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 52px; font-weight: 700; color: var(--teal);
             line-height: 1;
         }
-        .bolus-unit { font-size: 20px; color: var(--text-muted); margin-left: 4px; }
+        .bolus-unit { font-size: 18px; color: var(--text-muted); }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .detail-item { background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); text-align: center; }
+        .detail-item .dl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; margin-bottom: 3px; }
+        .detail-item .dv { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; }
+        .formula-box { background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+        .formula-box h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+        .fl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); padding: 3px 0; display: flex; align-items: center; gap: 8px; }
+        .fl .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
-        .detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-        .detail-item { background: var(--bg-card); padding: 14px; border-radius: var(--radius-sm); text-align: center; }
-        .detail-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
-        .detail-item .value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: var(--text); }
+        /* ─── Alerts ─── */
+        .alert { padding: 12px 14px; border-radius: var(--radius-sm); margin-top: 10px; font-size: 13px; line-height: 1.5; border-left: 3px solid; }
+        .alert-danger { background: var(--red-light); border-color: var(--red); color: var(--red); }
+        .alert-warn { background: var(--orange-light); border-color: var(--orange); color: var(--orange); }
+        .alert-info { background: var(--bg-teal-light); border-color: var(--teal); color: var(--teal-dark); }
+        .alert-success { background: var(--green-light); border-color: var(--green); color: var(--green); }
 
-        .formula-box { background: var(--bg-input); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
-        .formula-box h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 10px; }
-        .formula-line { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); padding: 4px 0; display: flex; align-items: center; gap: 8px; }
-        .formula-line .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .formula-line .dot.blue { background: var(--accent); }
-        .formula-line .dot.green { background: var(--success); }
-        .formula-line .dot.purple { background: var(--accent-2); }
-        .formula-line .dot.yellow { background: var(--warning); }
-
-        /* ─── Warnings ─── */
-        .warning-box { padding: 12px 16px; border-radius: var(--radius-sm); margin-top: 12px; font-size: 13px; line-height: 1.5; }
-        .warning-box.danger { background: var(--danger-bg); border-left: 3px solid var(--danger); color: var(--danger); }
-        .warning-box.warn { background: var(--warning-bg); border-left: 3px solid var(--warning); color: var(--warning); }
-        .warning-box.info { background: var(--accent-glow); border-left: 3px solid var(--accent); color: var(--accent); }
-
-        /* ─── Photo Section ─── */
+        /* ─── Photo ─── */
         .upload-zone {
             border: 2px dashed var(--border); border-radius: var(--radius);
-            padding: 48px 24px; text-align: center; cursor: pointer;
-            transition: all 0.2s ease; position: relative; overflow: hidden;
+            padding: 36px 20px; text-align: center; cursor: pointer;
+            transition: all 0.2s; background: var(--bg-subtle);
         }
-        .upload-zone:hover { border-color: var(--accent); background: var(--accent-glow); }
-        .upload-zone.has-image { padding: 0; border-style: solid; border-color: var(--accent); }
-        .upload-zone img { width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius-sm); }
-        .upload-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
-        .upload-zone h3 { color: var(--text); font-size: 16px; margin-bottom: 6px; }
-        .upload-zone p { color: var(--text-muted); font-size: 13px; }
+        .upload-zone:hover { border-color: var(--teal); background: var(--teal-bg); }
+        .upload-zone.has-image { padding: 0; border-style: solid; border-color: var(--teal); background: white; }
+        .upload-zone img { width: 100%; max-height: 350px; object-fit: contain; border-radius: var(--radius-sm); }
+        .upload-zone svg { width: 40px; height: 40px; fill: var(--text-muted); margin-bottom: 10px; }
+        .upload-zone h3 { color: var(--text-secondary); font-size: 14px; margin-bottom: 4px; }
+        .upload-zone p { color: var(--text-muted); font-size: 12px; }
         #file-input { display: none; }
 
+        .coin-tip {
+            display: flex; align-items: flex-start; gap: 12px;
+            background: var(--bg-teal-light); border-radius: var(--radius-sm);
+            padding: 14px; margin: 14px 0; border: 1px solid var(--bg-teal-muted);
+        }
+        .coin-tip svg { width: 36px; height: 36px; flex-shrink: 0; fill: var(--teal); }
+        .coin-tip .tip-text { font-size: 12px; color: var(--teal-dark); line-height: 1.6; }
+        .coin-tip .tip-text strong { font-weight: 700; }
+
         /* ─── Food Search ─── */
-        .search-box { position: relative; }
-        .search-box input { padding-left: 40px; }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.4; }
-        .food-results { max-height: 400px; overflow-y: auto; margin-top: 12px; }
+        .search-wrap { position: relative; }
+        .search-wrap input { padding-left: 38px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; }
+        .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: var(--text-muted); }
+        .food-results { max-height: 350px; overflow-y: auto; margin-top: 10px; }
         .food-item {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px; border-radius: var(--radius-sm);
-            transition: background 0.15s; cursor: pointer;
+            padding: 10px 12px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: background 0.15s;
         }
-        .food-item:hover { background: var(--bg-card-hover); }
-        .food-item .name { font-size: 14px; color: var(--text); text-transform: capitalize; }
-        .food-item .cho { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent); font-weight: 600; white-space: nowrap; }
-        .food-item .portion { font-size: 12px; color: var(--text-dim); }
-        .selected-foods { margin-top: 16px; }
+        .food-item:hover { background: var(--teal-bg); }
+        .food-item .fn { font-size: 13px; font-weight: 500; text-transform: capitalize; }
+        .food-item .fp { font-size: 11px; color: var(--text-muted); }
+        .food-item .fc { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--teal); font-weight: 600; }
         .selected-food {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 14px; background: var(--bg-input);
-            border-radius: var(--radius-sm); margin-bottom: 6px;
+            padding: 10px 12px; background: var(--bg-subtle); border-radius: var(--radius-sm); margin-bottom: 5px;
         }
-        .selected-food .info { display: flex; align-items: center; gap: 12px; }
-        .selected-food .name { font-size: 14px; text-transform: capitalize; }
-        .selected-food .cho { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 500; }
-        .remove-food { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; padding: 4px; opacity: 0.6; }
+        .selected-food .sf-info { display: flex; align-items: center; gap: 10px; }
+        .selected-food .sf-name { font-size: 13px; font-weight: 500; text-transform: capitalize; }
+        .selected-food .sf-cho { font-family: 'JetBrains Mono', monospace; color: var(--teal); font-weight: 600; font-size: 13px; }
+        .remove-food { background: none; border: none; color: var(--red); cursor: pointer; font-size: 18px; padding: 2px 6px; opacity: 0.5; }
         .remove-food:hover { opacity: 1; }
         .total-bar {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 16px;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(52, 211, 153, 0.08));
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            border-radius: var(--radius-sm); margin-top: 16px;
+            padding: 14px 16px; background: var(--teal-bg); border: 1.5px solid rgba(26,154,170,0.2);
+            border-radius: var(--radius-sm); margin-top: 12px;
         }
-        .total-bar .label { font-weight: 600; }
-        .total-bar .value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); }
+        .total-bar .tl { font-weight: 600; font-size: 14px; color: var(--teal-dark); }
+        .total-bar .tv { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--teal); }
 
-        /* ─── Registry Table ─── */
-        .log-table-wrapper { overflow-x: auto; margin-top: 16px; }
-        table.log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        table.log-table th {
-            background: var(--bg-input); color: var(--text-muted);
-            padding: 10px 12px; text-align: left; font-weight: 600;
-            font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-            position: sticky; top: 0; z-index: 1;
-            border-bottom: 1px solid var(--border);
+        /* ─── Table ─── */
+        .log-wrap { overflow-x: auto; margin-top: 12px; }
+        table.lt { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table.lt th {
+            background: var(--bg-subtle); color: var(--text-muted); padding: 8px 10px;
+            text-align: left; font-weight: 700; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.05em; border-bottom: 1.5px solid var(--border);
+            position: sticky; top: 0;
         }
-        table.log-table td {
-            padding: 10px 12px; border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-        }
-        table.log-table tr:hover td { background: var(--bg-card-hover); }
-        .badge {
-            display: inline-block; padding: 2px 8px; border-radius: 10px;
-            font-size: 11px; font-weight: 600;
-        }
-        .badge-low { background: var(--danger-bg); color: var(--danger); }
-        .badge-normal { background: var(--success-bg); color: var(--success); }
-        .badge-high { background: var(--warning-bg); color: var(--warning); }
-        .badge-very-high { background: var(--danger-bg); color: var(--danger); }
-        .del-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; }
-        .del-btn:hover { color: var(--danger); }
+        table.lt td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        table.lt tr:hover td { background: var(--teal-bg); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge-low { background: var(--red-light); color: var(--red); }
+        .badge-ok { background: var(--green-light); color: var(--green); }
+        .badge-high { background: var(--orange-light); color: var(--orange); }
+        .badge-vhigh { background: var(--red-light); color: var(--red); }
+        .del-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+        .del-btn:hover { color: var(--red); }
 
         /* ─── Charts ─── */
-        .chart-container { position: relative; height: 300px; margin: 16px 0; }
-        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-container { position: relative; height: 260px; margin: 12px 0; }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-        /* ─── Stats Grid ─── */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-        .stat-card {
-            background: var(--bg-input); border-radius: var(--radius-sm);
-            padding: 16px; text-align: center;
-        }
-        .stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
-        .stat-card .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; }
-        .stat-card .stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+        .stat-card { background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
+        .stat-card .sl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700; }
+        .stat-card .sv { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; margin: 2px 0; }
+        .stat-card .ss { font-size: 10px; color: var(--text-muted); }
 
-        /* ─── Analysis Section ─── */
-        .analysis-content {
-            font-size: 14px; line-height: 1.8; color: var(--text);
-        }
-        .analysis-content h3 {
-            font-size: 15px; font-weight: 600; color: var(--accent);
-            margin: 20px 0 8px; padding-bottom: 6px;
-            border-bottom: 1px solid var(--border);
-        }
-        .analysis-content h3:first-child { margin-top: 0; }
-        .analysis-content p { margin-bottom: 10px; }
-        .analysis-content strong { color: var(--text); }
-        .analysis-loading {
-            text-align: center; padding: 40px;
-            color: var(--text-muted);
-        }
-        .analysis-loading .spinner {
-            width: 40px; height: 40px; border: 3px solid var(--border);
-            border-top-color: var(--accent); border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ─── Disclaimer ─── */
-        .disclaimer {
-            background: var(--warning-bg); border: 1px solid rgba(251, 191, 36, 0.2);
-            border-radius: var(--radius-sm); padding: 14px 18px;
-            font-size: 12px; color: var(--warning); text-align: center;
-            margin-top: 24px; line-height: 1.6;
-        }
-
-        /* ─── API Info ─── */
-        .endpoint-card { background: var(--bg-input); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
-        .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; margin-right: 8px; }
-        .method.get { background: rgba(52, 211, 153, 0.15); color: var(--success); }
-        .method.post { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
-        .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
-        .endpoint-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-        code { background: var(--bg-input); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-        pre {
-            background: var(--bg-input); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); padding: 16px; overflow-x: auto;
-            font-family: 'JetBrains Mono', monospace; font-size: 12px;
-            line-height: 1.6; color: var(--text-muted); margin-top: 12px;
-        }
-
-        /* ─── Period Selector ─── */
-        .period-selector {
-            display: flex; gap: 4px; background: var(--bg-input);
-            padding: 3px; border-radius: var(--radius-sm); margin-bottom: 20px;
-            width: fit-content;
+        .period-sel {
+            display: inline-flex; gap: 2px; background: var(--bg-subtle);
+            padding: 3px; border-radius: var(--radius-xs); margin-bottom: 14px;
         }
         .period-btn {
-            padding: 6px 16px; border: none; background: transparent;
-            color: var(--text-muted); font-family: inherit; font-size: 12px;
-            font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+            padding: 5px 14px; border: none; background: transparent;
+            color: var(--text-muted); font-family: inherit; font-size: 11px;
+            font-weight: 600; border-radius: 4px; cursor: pointer;
         }
-        .period-btn:hover { color: var(--text); }
-        .period-btn.active { background: var(--accent); color: #0a0e17; font-weight: 600; }
+        .period-btn.active { background: var(--teal); color: white; }
 
-        /* ─── Moment Tags ─── */
-        .moment-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-        .moment-tag {
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 12px; cursor: pointer; transition: all 0.15s;
-            border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+        /* ─── Analysis ─── */
+        .analysis-content { font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
+        .analysis-content h3 { font-size: 14px; font-weight: 700; color: var(--teal-dark); margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .analysis-content h3:first-child { margin-top: 0; }
+        .analysis-content p { margin-bottom: 8px; }
+        .analysis-content strong { color: var(--text); }
+        .analysis-loading { text-align: center; padding: 36px; color: var(--text-muted); }
+        .analysis-loading .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .disclaimer {
+            background: var(--orange-light); border: 1px solid rgba(214,140,46,0.2);
+            border-radius: var(--radius-sm); padding: 12px 16px;
+            font-size: 11px; color: var(--orange); text-align: center;
+            margin-top: 20px; line-height: 1.6;
         }
-        .moment-tag:hover { border-color: var(--accent); color: var(--accent); }
-        .moment-tag.selected { background: var(--accent); color: #0a0e17; border-color: var(--accent); font-weight: 600; }
 
-        /* ─── Responsive ─── */
-        @media (max-width: 768px) {
-            .form-grid, .chart-row { grid-template-columns: 1fr; }
-            .form-grid-3 { grid-template-columns: 1fr 1fr; }
+        /* ─── Developer Toggle ─── */
+        .dev-toggle {
+            text-align: center; margin-top: 24px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .dev-toggle button {
+            background: none; border: none; color: var(--text-muted);
+            font-family: inherit; font-size: 11px; cursor: pointer;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .chart-row { grid-template-columns: 1fr; }
             .detail-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .tabs { flex-wrap: nowrap; overflow-x: auto; }
-            .tab { min-width: max-content; padding: 10px 8px; font-size: 12px; }
-            .bolus-value { font-size: 40px; }
-            .container { padding: 0 12px 40px; }
+            .container { padding: 12px 12px 80px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <div class="logo">
-            <div class="logo-icon">💉</div>
+<!-- ─── SVG ICONS (hidden) ─── -->
+<svg style="display:none">
+    <symbol id="ico-drop" viewBox="0 0 24 24"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 1014 0C19 10.5 12 2 12 2zm0 18a5 5 0 01-5-5c0-3.17 3.57-8.56 5-10.78C13.43 6.44 17 11.83 17 15a5 5 0 01-5 5z"/></symbol>
+    <symbol id="ico-syringe" viewBox="0 0 24 24"><path d="M11.15 15.18l-1.42-1.42L12.56 11 11.15 9.59l-2.83 2.83-1.42-1.42 2.83-2.83L8.32 6.76 5.49 9.59 4.08 8.17l4.24-4.24 1.42 1.42-.71.71 1.42 1.42.7-.71 8.49 8.49-.7.71 1.41 1.42.71-.71 1.42 1.42-4.24 4.24-1.42-1.42 2.83-2.83-1.42-1.42-2.83 2.83-1.42-1.42 2.83-2.83-1.42-1.42z"/></symbol>
+    <symbol id="ico-calc" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM6.25 7.72h11.5v2.5H6.25zM6.25 12h3.5v5H6.25zm5.25 0h3.5v5h-3.5zm5.25 0H20v5h-3.25z"/></symbol>
+    <symbol id="ico-food" viewBox="0 0 24 24"><path d="M8.1 13.34l2.83-2.83L3.91 3.5a4 4 0 000 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13z"/></symbol>
+    <symbol id="ico-camera" viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></symbol>
+    <symbol id="ico-clipboard" viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></symbol>
+    <symbol id="ico-chart" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></symbol>
+    <symbol id="ico-stethoscope" viewBox="0 0 24 24"><path d="M19 8c-1.66 0-3 1.34-3 3 0 1.3.84 2.4 2 2.82V17c0 1.65-1.35 3-3 3s-3-1.35-3-3v-1.18C14.32 15.12 16 13.22 16 11V4h-2v1H8V4H6v7c0 2.22 1.68 4.12 4 4.82V17c0 2.76 2.24 5 5 5s5-2.24 5-5v-3.18c1.16-.42 2-1.52 2-2.82 0-1.66-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM8 11V7h6v4c0 1.65-1.35 3-3 3s-3-1.35-3-3z"/></symbol>
+    <symbol id="ico-help" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></symbol>
+    <symbol id="ico-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">$</text></symbol>
+    <symbol id="ico-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+    <symbol id="ico-download" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
+    <symbol id="ico-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+    <symbol id="ico-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+    <symbol id="ico-code" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></symbol>
+</svg>
+
+<div class="header">
+    <div class="logo">
+        <svg><use href="#ico-drop"/></svg>
+        <div>
             <h1>GlucoHelper</h1>
-        </div>
-        <p>Calculadora de bolus, registro glicémico y análisis inteligente<br>Diseñada por y para personas con diabetes</p>
-    </div>
-
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('calculator')" id="tab-calculator">
-            <span class="tab-icon">🧮</span> Calculadora
-        </button>
-        <button class="tab" onclick="switchTab('foods')" id="tab-foods">
-            <span class="tab-icon">🍽️</span> Alimentos
-        </button>
-        <button class="tab" onclick="switchTab('photo')" id="tab-photo">
-            <span class="tab-icon">📸</span> Foto
-        </button>
-        <button class="tab" onclick="switchTab('registry')" id="tab-registry">
-            <span class="tab-icon">📋</span> Registro
-        </button>
-        <button class="tab" onclick="switchTab('charts')" id="tab-charts">
-            <span class="tab-icon">📊</span> Gráficos
-        </button>
-        <button class="tab" onclick="switchTab('analysis')" id="tab-analysis">
-            <span class="tab-icon">🩺</span> Análisis
-        </button>
-        <button class="tab" onclick="switchTab('api')" id="tab-api">
-            <span class="tab-icon">⚡</span> API
-        </button>
-    </div>
-
-    <!-- ═══════════ CALCULATOR ═══════════ -->
-    <div class="panel active" id="panel-calculator">
-        <div class="card">
-            <div class="card-title"><div class="icon blue">⚙️</div> Mi Configuración</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Ratio I:CHO <span class="unit">(1U cubre X g)</span></label>
-                    <input type="number" id="ratio" value="10" min="1" max="50" step="0.5">
-                </div>
-                <div class="form-group">
-                    <label>Factor Sensibilidad <span class="unit">(1U baja X mg/dL)</span></label>
-                    <input type="number" id="sensibilidad" value="40" min="5" max="150" step="1">
-                </div>
-                <div class="form-group">
-                    <label>Glicemia Objetivo <span class="unit">(mg/dL)</span></label>
-                    <input type="number" id="objetivo" value="110" min="70" max="180" step="5">
-                </div>
-                <div class="form-group">
-                    <label>Tipo de Terapia</label>
-                    <select id="terapia" onchange="toggleIOB()">
-                        <option value="MDI">MDI (Múltiples Dosis)</option>
-                        <option value="Bomba">Bomba de Insulina</option>
-                    </select>
-                </div>
-                <div class="form-group" id="iob-group" style="display:none">
-                    <label>Insulina Activa (IOB) <span class="unit">(U)</span></label>
-                    <input type="number" id="iob" value="0" min="0" max="20" step="0.1">
-                </div>
-                <div class="form-group">
-                    <div class="toggle-row">
-                        <label>¿Media unidad disponible?</label>
-                        <label class="toggle"><input type="checkbox" id="media-unidad"><span class="toggle-slider"></span></label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><div class="icon green">📊</div> Datos Actuales</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Glicemia Actual <span class="unit">(mg/dL)</span></label>
-                    <input type="number" id="glicemia" placeholder="ej: 180" min="20" max="600">
-                </div>
-                <div class="form-group">
-                    <label>Carbohidratos <span class="unit">(gramos)</span></label>
-                    <input type="number" id="carbohidratos" placeholder="ej: 60" min="0" max="500">
-                </div>
-                <div class="form-group full">
-                    <label>Momento</label>
-                    <div class="moment-tags" id="moment-tags-calc">
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🌅 Ayunas</span>
-                        <span class="moment-tag selected" onclick="selectMoment(this,'calc')">🍳 Desayuno</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🥗 Almuerzo</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🍝 Cena</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🍎 Snack</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🌙 Nocturno</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'calc')">🔧 Corrección</span>
-                    </div>
-                </div>
-            </div>
-            <div style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="calcularBolus()">💉 Calcular Bolus</button>
-            </div>
-        </div>
-
-        <div id="resultado"></div>
-
-        <div class="disclaimer">
-            ⚠️ Esta herramienta es solo de apoyo y NO reemplaza el consejo médico profesional.
-            Siempre consulta con tu endocrinólogo o equipo de diabetes.
-        </div>
-    </div>
-
-    <!-- ═══════════ FOODS ═══════════ -->
-    <div class="panel" id="panel-foods">
-        <div class="card">
-            <div class="card-title"><div class="icon yellow">🔍</div> Buscar Alimentos</div>
-            <div class="search-box">
-                <span class="search-icon">🔎</span>
-                <input type="text" id="food-search" placeholder="Busca un alimento... (ej: arroz, plátano, pizza)" oninput="searchFood(this.value)">
-            </div>
-            <div class="food-results" id="food-results"></div>
-        </div>
-        <div class="card">
-            <div class="card-title"><div class="icon green">✅</div> Mi Plato</div>
-            <div class="selected-foods" id="selected-foods">
-                <p style="color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px;">Busca y selecciona alimentos</p>
-            </div>
-            <div class="total-bar" id="total-bar" style="display:none">
-                <span class="label">Total CHO</span>
-                <span class="value" id="total-cho">0g</span>
-            </div>
-            <div style="margin-top: 16px;">
-                <button class="btn btn-secondary" onclick="usarCHOenCalculadora()" style="display:none" id="btn-usar-cho">
-                    🧮 Usar en la Calculadora
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══════════ PHOTO ═══════════ -->
-    <div class="panel" id="panel-photo">
-        <div class="card">
-            <div class="card-title"><div class="icon blue">📸</div> Analizar Foto de Alimentos</div>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Toma una foto de tu comida y la IA estimará los carbohidratos.
-            </p>
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label>API Key de Anthropic <span class="unit">(para análisis por IA)</span></label>
-                <input type="text" id="api-key" placeholder="sk-ant-..." autocomplete="off">
-            </div>
-            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-                <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)">
-                <div class="upload-icon">📷</div>
-                <h3>Toca para tomar foto o seleccionar imagen</h3>
-                <p>JPG, PNG — máximo 10MB</p>
-            </div>
-            <div style="margin-top: 16px;">
-                <button class="btn btn-primary" onclick="analizarImagen()" id="btn-analizar" disabled>🤖 Analizar con IA</button>
-            </div>
-            <div id="photo-result"></div>
-        </div>
-    </div>
-
-    <!-- ═══════════ REGISTRY ═══════════ -->
-    <div class="panel" id="panel-registry">
-        <div class="card">
-            <div class="card-title"><div class="icon green">➕</div> Registrar Manualmente</div>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Si calculaste tu bolus mentalmente o quieres registrar una medición sin calcular, usa este formulario.
-            </p>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Fecha y Hora</label>
-                    <input type="datetime-local" id="reg-datetime">
-                </div>
-                <div class="form-group">
-                    <label>Glicemia <span class="unit">(mg/dL)</span></label>
-                    <input type="number" id="reg-glicemia" placeholder="ej: 120" min="20" max="600">
-                </div>
-                <div class="form-group">
-                    <label>Carbohidratos <span class="unit">(g)</span></label>
-                    <input type="number" id="reg-cho" placeholder="ej: 45" min="0" max="500">
-                </div>
-                <div class="form-group">
-                    <label>Insulina Administrada <span class="unit">(U)</span></label>
-                    <input type="number" id="reg-insulin" placeholder="ej: 6" min="0" max="100" step="0.5">
-                </div>
-                <div class="form-group full">
-                    <label>Momento</label>
-                    <div class="moment-tags" id="moment-tags-reg">
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🌅 Ayunas</span>
-                        <span class="moment-tag selected" onclick="selectMoment(this,'reg')">🍳 Desayuno</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🥗 Almuerzo</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🍝 Cena</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🍎 Snack</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🌙 Nocturno</span>
-                        <span class="moment-tag" onclick="selectMoment(this,'reg')">🔧 Corrección</span>
-                    </div>
-                </div>
-                <div class="form-group full">
-                    <label>Notas <span class="unit">(opcional)</span></label>
-                    <textarea id="reg-notes" placeholder="Ej: ejercicio previo, estrés, enfermedad..."></textarea>
-                </div>
-            </div>
-            <div style="margin-top: 16px;">
-                <button class="btn btn-primary" onclick="registrarManual()">💾 Guardar Registro</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><div class="icon blue">📋</div> Historial de Registros</div>
-            <div class="period-selector">
-                <button class="period-btn active" onclick="filterLogs('7d', this)">7 días</button>
-                <button class="period-btn" onclick="filterLogs('14d', this)">14 días</button>
-                <button class="period-btn" onclick="filterLogs('30d', this)">30 días</button>
-                <button class="period-btn" onclick="filterLogs('all', this)">Todo</button>
-            </div>
-            <div class="log-table-wrapper" style="max-height: 500px; overflow-y: auto;">
-                <table class="log-table">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                            <th>Momento</th>
-                            <th>Glicemia</th>
-                            <th>CHO</th>
-                            <th>Insulina</th>
-                            <th>Notas</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="log-tbody"></tbody>
-                </table>
-            </div>
-            <div id="log-empty" style="text-align:center; padding: 30px; color: var(--text-dim); font-size: 13px; display:none;">
-                No hay registros aún. Calcula un bolus o registra manualmente.
-            </div>
-            <div class="btn-row" style="margin-top: 16px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📥 Exportar CSV</button>
-                <button class="btn btn-danger btn-sm" onclick="clearAllLogs()">🗑️ Limpiar Todo</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══════════ CHARTS ═══════════ -->
-    <div class="panel" id="panel-charts">
-        <div class="card">
-            <div class="card-title"><div class="icon purple">📈</div> Estadísticas</div>
-            <div class="period-selector">
-                <button class="period-btn active" onclick="updateCharts('7d', this)">7 días</button>
-                <button class="period-btn" onclick="updateCharts('14d', this)">14 días</button>
-                <button class="period-btn" onclick="updateCharts('30d', this)">30 días</button>
-                <button class="period-btn" onclick="updateCharts('all', this)">Todo</button>
-            </div>
-            <div class="stats-grid" id="stats-grid">
-                <div class="stat-card"><div class="stat-label">Promedio</div><div class="stat-value" id="stat-avg">--</div><div class="stat-sub">mg/dL</div></div>
-                <div class="stat-card"><div class="stat-label">Desv. Estándar</div><div class="stat-value" id="stat-sd">--</div><div class="stat-sub">mg/dL</div></div>
-                <div class="stat-card"><div class="stat-label">Tiempo en Rango</div><div class="stat-value" id="stat-tir" style="color: var(--success)">--</div><div class="stat-sub">70-180 mg/dL</div></div>
-                <div class="stat-card"><div class="stat-label">HbA1c Est.</div><div class="stat-value" id="stat-a1c" style="color: var(--accent)">--</div><div class="stat-sub">%</div></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><div class="icon blue">🩸</div> Glicemias en el Tiempo</div>
-            <div class="chart-container"><canvas id="chart-glucose"></canvas></div>
-        </div>
-
-        <div class="chart-row">
-            <div class="card">
-                <div class="card-title"><div class="icon green">💉</div> Insulina por Dosis</div>
-                <div class="chart-container"><canvas id="chart-insulin"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="card-title"><div class="icon yellow">🍞</div> Carbohidratos</div>
-                <div class="chart-container"><canvas id="chart-carbs"></canvas></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><div class="icon purple">🎯</div> Distribución por Momento del Día</div>
-            <div class="chart-container"><canvas id="chart-moments"></canvas></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><div class="icon green">⏱️</div> Tiempo en Rango</div>
-            <div class="chart-container" style="height: 200px;"><canvas id="chart-tir"></canvas></div>
-        </div>
-    </div>
-
-    <!-- ═══════════ ANALYSIS ═══════════ -->
-    <div class="panel" id="panel-analysis">
-        <div class="card">
-            <div class="card-title"><div class="icon red">🩺</div> Análisis Clínico Inteligente</div>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Un endocrinólogo virtual analiza tus registros y te da recomendaciones personalizadas.
-                Necesitas al menos 5 registros y una API key de Anthropic.
-            </p>
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label>API Key de Anthropic</label>
-                <input type="text" id="analysis-api-key" placeholder="sk-ant-..." autocomplete="off">
-            </div>
-            <button class="btn btn-primary" onclick="runAnalysis()" id="btn-analysis">
-                🩺 Obtener Análisis y Recomendaciones
-            </button>
-            <div id="analysis-result" style="margin-top: 20px;"></div>
-        </div>
-        <div class="disclaimer">
-            ⚠️ El análisis es generado por IA y tiene fines informativos. NO reemplaza la consulta con tu endocrinólogo.
-            Comparte estos datos con tu equipo médico para decisiones clínicas.
-        </div>
-    </div>
-
-    <!-- ═══════════ API ═══════════ -->
-    <div class="panel" id="panel-api">
-        <div class="card">
-            <div class="card-title"><div class="icon blue">⚡</div> Documentación de la API</div>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
-                Comparte esta API con otros diabéticos. Todos los endpoints están listos para integrar.
-            </p>
-            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/bolus</span><p class="endpoint-desc">Calcula dosis de bolus de insulina</p></div>
-            <div class="endpoint-card"><span class="method get">GET</span><span class="endpoint-path">/api/v1/alimentos</span><p class="endpoint-desc">Lista todos los alimentos</p></div>
-            <div class="endpoint-card"><span class="method get">GET</span><span class="endpoint-path">/api/v1/alimentos/buscar?q=arroz</span><p class="endpoint-desc">Busca alimento por nombre</p></div>
-            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/estimar-carbohidratos</span><p class="endpoint-desc">Estima CHO por lista de alimentos</p></div>
-            <div class="endpoint-card"><span class="method post">POST</span><span class="endpoint-path">/api/v1/analizar-imagen</span><p class="endpoint-desc">Analiza foto con IA</p></div>
-            <h3 style="font-size: 14px; margin: 24px 0 12px;">Ejemplo cURL</h3>
-            <pre>curl -X POST http://localhost:8000/api/v1/bolus \
-  -H "Content-Type: application/json" \
-  -d '{
-    "perfil": {
-      "nombre": "Carlos",
-      "ratio_insulina_carbohidratos": 10,
-      "factor_sensibilidad": 40,
-      "glicemia_objetivo": 110,
-      "tipo_terapia": "MDI"
-    },
-    "glicemia_actual": 180,
-    "carbohidratos": 60
-  }'</pre>
-            <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">
-                Visita <code>/docs</code> para Swagger interactivo o <code>/redoc</code> para ReDoc.
-            </p>
+            <div class="subtitle">Tu asistente para diabetes</div>
         </div>
     </div>
 </div>
 
-<script>
-// ═══════════════════════════════════════════════════════════════════════════════
-// DATA LAYER — localStorage-based registry
-// ═══════════════════════════════════════════════════════════════════════════════
+<div class="container">
+    <nav class="nav">
+        <button class="nav-btn active" onclick="switchTab('calc')" id="tab-calc">
+            <svg><use href="#ico-syringe"/></svg> Bolus
+        </button>
+        <button class="nav-btn" onclick="switchTab('foods')" id="tab-foods">
+            <svg><use href="#ico-food"/></svg> Alimentos
+        </button>
+        <button class="nav-btn" onclick="switchTab('photo')" id="tab-photo">
+            <svg><use href="#ico-camera"/></svg> Foto
+        </button>
+        <button class="nav-btn" onclick="switchTab('log')" id="tab-log">
+            <svg><use href="#ico-clipboard"/></svg> Registro
+        </button>
+        <button class="nav-btn" onclick="switchTab('charts')" id="tab-charts">
+            <svg><use href="#ico-chart"/></svg> Gráficos
+        </button>
+        <button class="nav-btn" onclick="switchTab('analysis')" id="tab-analysis">
+            <svg><use href="#ico-stethoscope"/></svg> Análisis
+        </button>
+    </nav>
 
-const STORAGE_KEY = 'glucohelper_logs';
-const SETTINGS_KEY = 'glucohelper_settings';
-
-function getLogs() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-}
-
-function saveLogs(logs) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-}
-
-function addLog(entry) {
-    const logs = getLogs();
-    entry.id = Date.now() + Math.random().toString(36).substr(2, 5);
-    logs.push(entry);
-    logs.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
-    saveLogs(logs);
-    return entry;
-}
-
-function deleteLog(id) {
-    const logs = getLogs().filter(l => l.id !== id);
-    saveLogs(logs);
-}
-
-function getFilteredLogs(period) {
-    const logs = getLogs();
-    if (period === 'all') return logs;
-    const days = parseInt(period);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return logs.filter(l => new Date(l.datetime) >= cutoff);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// TAB SWITCHING
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function switchTab(tab) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(`panel-${tab}`).classList.add('active');
-    document.getElementById(`tab-${tab}`).classList.add('active');
-    if (tab === 'registry') renderLogTable('7d');
-    if (tab === 'charts') updateCharts('7d');
-}
-
-function toggleIOB() {
-    document.getElementById('iob-group').style.display =
-        document.getElementById('terapia').value === 'Bomba' ? 'flex' : 'none';
-}
-
-function selectMoment(el, ctx) {
-    el.closest('.moment-tags').querySelectorAll('.moment-tag').forEach(t => t.classList.remove('selected'));
-    el.classList.add('selected');
-}
-
-function getSelectedMoment(ctx) {
-    const sel = document.getElementById(`moment-tags-${ctx}`).querySelector('.moment-tag.selected');
-    return sel ? sel.textContent.trim() : 'Otro';
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// BOLUS CALCULATOR
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function calcularBolus() {
-    const ratio = parseFloat(document.getElementById('ratio').value);
-    const sensibilidad = parseFloat(document.getElementById('sensibilidad').value);
-    const objetivo = parseFloat(document.getElementById('objetivo').value);
-    const terapia = document.getElementById('terapia').value;
-    const iob = parseFloat(document.getElementById('iob').value) || 0;
-    const mediaUnidad = document.getElementById('media-unidad').checked;
-    const glicemia = parseFloat(document.getElementById('glicemia').value);
-    const cho = parseFloat(document.getElementById('carbohidratos').value);
-    const momento = getSelectedMoment('calc');
-
-    if (!glicemia || !ratio || !sensibilidad || !objetivo || isNaN(cho)) {
-        alert('Completa todos los campos requeridos'); return;
-    }
-
-    const bolusAlim = cho / ratio;
-    const dif = glicemia - objetivo;
-    const bolusCorBruto = dif / sensibilidad;
-    let bolusCor = bolusCorBruto;
-    let iobDesc = 0;
-    if (bolusCor > 0 && iob > 0) { iobDesc = Math.min(iob, bolusCor); bolusCor -= iobDesc; }
-    let total = bolusAlim + bolusCor;
-    const advertencias = [];
-
-    if (glicemia < 70) advertencias.push({type:'danger', text:'🚨 HIPOGLICEMIA < 70 mg/dL. Trata primero con 15g de CHO rápidos.'});
-    else if (glicemia < 80) advertencias.push({type:'warn', text:'⚠️ Glicemia baja. Considera reducir dosis.'});
-    if (bolusCorBruto < 0) advertencias.push({type:'info', text:`ℹ️ Glicemia bajo objetivo (${glicemia} < ${objetivo}). Se resta del bolus.`});
-    if (iobDesc > 0) advertencias.push({type:'info', text:`ℹ️ Se descontaron ${iobDesc.toFixed(2)}U de IOB.`});
-    if (total < 0) { advertencias.push({type:'warn', text:'🍬 Bolus negativo. Ingerir CHO sin insulina.'}); total = 0; }
-    if (glicemia > 300) advertencias.push({type:'danger', text:'🚨 Glicemia > 300. Verificar cetonas.'});
-
-    let rec, redTxt;
-    if (terapia === 'Bomba') { rec = Math.round(total * 20) / 20; redTxt = '0.05U (bomba)'; }
-    else if (mediaUnidad) { rec = Math.round(total * 2) / 2; redTxt = '0.5U'; }
-    else { rec = Math.round(total); redTxt = '1U'; }
-
-    if (rec > 20) advertencias.push({type:'warn', text:'⚠️ Bolus > 20U. Verifica datos.'});
-
-    // Save log
-    addLog({
-        datetime: new Date().toISOString(),
-        glicemia, cho, insulina: rec, momento,
-        notas: `Bolus calculado: ${bolusAlim.toFixed(1)}U alim + ${bolusCor.toFixed(1)}U cor = ${rec}U`,
-        source: 'calculator'
-    });
-
-    document.getElementById('resultado').innerHTML = `
-    <div class="result-card">
-        <div class="bolus-display">
-            <div class="bolus-label">Bolus Recomendado</div>
-            <div class="bolus-value">${rec}<span class="bolus-unit">U</span></div>
-            <div style="color: var(--text-dim); font-size: 13px; margin-top: 8px;">
-                Exacto: ${total.toFixed(2)}U · Redondeo: ${redTxt}
+    <!-- ═══ BOLUS CALCULATOR ═══ -->
+    <div class="panel active" id="panel-calc">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon teal"><svg><use href="#ico-calc"/></svg></div>
+                <div><div class="card-title">Mi configuración</div><div class="card-subtitle">Estos valores los define tu endocrinólogo</div></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Ratio I:CHO <span class="unit">(1U por X g)</span></label>
+                    <input type="number" id="ratio" value="10" min="1" max="50" step="0.5">
+                    <button class="help-link" onclick="showHelp('ratio')"><svg><use href="#ico-help"/></svg> ¿Qué es esto?</button>
+                </div>
+                <div class="form-group">
+                    <label>Sensibilidad <span class="unit">(1U baja X mg/dL)</span></label>
+                    <input type="number" id="sensibilidad" value="40" min="5" max="150" step="1">
+                    <button class="help-link" onclick="showHelp('sensi')"><svg><use href="#ico-help"/></svg> ¿Cómo calcularlo?</button>
+                </div>
+                <div class="form-group">
+                    <label>Glicemia objetivo <span class="unit">(mg/dL)</span></label>
+                    <input type="number" id="objetivo" value="110" min="70" max="180" step="5">
+                </div>
+                <div class="form-group">
+                    <label>Terapia</label>
+                    <select id="terapia" onchange="toggleIOB()">
+                        <option value="MDI">MDI (Inyecciones)</option>
+                        <option value="Bomba">Bomba de Insulina</option>
+                    </select>
+                </div>
+                <div class="form-group" id="iob-group" style="display:none">
+                    <label>Insulina activa <span class="unit">(U)</span></label>
+                    <input type="number" id="iob" value="0" min="0" max="20" step="0.1">
+                </div>
             </div>
         </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon green"><svg><use href="#ico-drop"/></svg></div>
+                <div><div class="card-title">¿Cuánto me inyecto?</div><div class="card-subtitle">Ingresa tu glicemia y carbohidratos a comer</div></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Glicemia actual <span class="unit">(mg/dL)</span></label>
+                    <input type="number" id="glicemia" placeholder="Ej: 180" min="20" max="600">
+                </div>
+                <div class="form-group">
+                    <label>Carbohidratos <span class="unit">(gramos)</span></label>
+                    <input type="number" id="carbohidratos" placeholder="Ej: 60" min="0" max="500">
+                </div>
+                <div class="form-group full">
+                    <label>Momento</label>
+                    <div class="moment-tags" id="moment-calc">
+                        <span class="moment-tag" onclick="selMom(this)">Ayunas</span>
+                        <span class="moment-tag selected" onclick="selMom(this)">Desayuno</span>
+                        <span class="moment-tag" onclick="selMom(this)">Almuerzo</span>
+                        <span class="moment-tag" onclick="selMom(this)">Cena</span>
+                        <span class="moment-tag" onclick="selMom(this)">Snack</span>
+                        <span class="moment-tag" onclick="selMom(this)">Nocturno</span>
+                        <span class="moment-tag" onclick="selMom(this)">Corrección</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:16px">
+                <button class="btn btn-primary" onclick="calcBolus()">
+                    <svg><use href="#ico-syringe"/></svg> Calcular dosis
+                </button>
+            </div>
+        </div>
+        <div id="resultado"></div>
+        <div class="disclaimer">⚠️ Herramienta de apoyo. NO reemplaza a tu endocrinólogo. Valida siempre con tu equipo médico.</div>
+    </div>
+
+    <!-- ═══ FOODS ═══ -->
+    <div class="panel" id="panel-foods">
+        <div class="card">
+            <div class="card-header"><div class="card-icon orange"><svg><use href="#ico-search"/></svg></div><div><div class="card-title">Buscar alimentos</div><div class="card-subtitle">Busca y arma tu plato</div></div></div>
+            <div class="search-wrap"><svg><use href="#ico-search"/></svg><input type="text" id="food-search" placeholder="Ej: arroz, plátano, pizza..." oninput="searchFood(this.value)"></div>
+            <div class="food-results" id="food-results"></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><div class="card-icon green"><svg><use href="#ico-check"/></svg></div><div><div class="card-title">Mi plato</div></div></div>
+            <div id="selected-foods"><p style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px">Selecciona alimentos de la búsqueda</p></div>
+            <div class="total-bar" id="total-bar" style="display:none"><span class="tl">Total CHO</span><span class="tv" id="total-cho">0g</span></div>
+            <button class="btn btn-outline" onclick="useCHO()" style="display:none;margin-top:12px" id="btn-use-cho"><svg><use href="#ico-syringe"/></svg> Calcular bolus con estos CHO</button>
+        </div>
+    </div>
+
+    <!-- ═══ PHOTO ═══ -->
+    <div class="panel" id="panel-photo">
+        <div class="card">
+            <div class="card-header"><div class="card-icon teal"><svg><use href="#ico-camera"/></svg></div><div><div class="card-title">Foto de alimentos</div><div class="card-subtitle">La IA estimará los carbohidratos</div></div></div>
+
+            <div class="coin-tip">
+                <svg viewBox="0 0 48 48" style="width:48px;height:48px;fill:var(--teal)"><circle cx="24" cy="24" r="20" fill="none" stroke="var(--teal)" stroke-width="3"/><circle cx="24" cy="24" r="15" fill="none" stroke="var(--teal)" stroke-width="1.5" opacity="0.4"/><text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--teal)">500</text></svg>
+                <div class="tip-text">
+                    <strong>Truco para mayor precisión:</strong> Coloca una moneda de $500 pesos chilenos junto al alimento antes de tomar la foto. La IA usará la moneda como referencia de escala (26.5mm) para estimar mejor el tamaño de las porciones.
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px">
+                <label>API Key de Anthropic</label>
+                <input type="text" id="api-key" placeholder="sk-ant-..." autocomplete="off" style="font-size:12px">
+            </div>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)">
+                <svg><use href="#ico-camera"/></svg>
+                <h3>Toca para tomar foto</h3>
+                <p>Recuerda poner la moneda de $500 al lado</p>
+            </div>
+            <div style="margin-top:14px"><button class="btn btn-primary" onclick="analyzeImage()" id="btn-analyze" disabled><svg><use href="#ico-stethoscope"/></svg> Analizar con IA</button></div>
+            <div id="photo-result"></div>
+        </div>
+    </div>
+
+    <!-- ═══ LOG ═══ -->
+    <div class="panel" id="panel-log">
+        <div class="card">
+            <div class="card-header"><div class="card-icon green"><svg><use href="#ico-clipboard"/></svg></div><div><div class="card-title">Registro manual</div><div class="card-subtitle">Para mediciones sin cálculo de bolus</div></div></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Fecha y hora</label><input type="datetime-local" id="reg-dt"></div>
+                <div class="form-group"><label>Glicemia <span class="unit">(mg/dL)</span></label><input type="number" id="reg-gl" placeholder="120" min="20" max="600"></div>
+                <div class="form-group"><label>CHO <span class="unit">(g)</span></label><input type="number" id="reg-cho" placeholder="45" min="0" max="500"></div>
+                <div class="form-group"><label>Insulina <span class="unit">(U)</span></label><input type="number" id="reg-ins" placeholder="6" min="0" max="100" step="0.5"></div>
+                <div class="form-group full"><label>Momento</label>
+                    <div class="moment-tags" id="moment-log">
+                        <span class="moment-tag" onclick="selMom(this)">Ayunas</span>
+                        <span class="moment-tag selected" onclick="selMom(this)">Desayuno</span>
+                        <span class="moment-tag" onclick="selMom(this)">Almuerzo</span>
+                        <span class="moment-tag" onclick="selMom(this)">Cena</span>
+                        <span class="moment-tag" onclick="selMom(this)">Snack</span>
+                        <span class="moment-tag" onclick="selMom(this)">Nocturno</span>
+                        <span class="moment-tag" onclick="selMom(this)">Corrección</span>
+                    </div>
+                </div>
+                <div class="form-group full"><label>Notas</label><textarea id="reg-notes" placeholder="Ejercicio, estrés, enfermedad..."></textarea></div>
+            </div>
+            <div style="margin-top:14px"><button class="btn btn-primary" onclick="manualLog()"><svg><use href="#ico-clipboard"/></svg> Guardar registro</button></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div class="card-icon teal"><svg><use href="#ico-clipboard"/></svg></div><div><div class="card-title">Historial</div></div></div>
+            <div class="period-sel">
+                <button class="period-btn active" onclick="filterLog('7',this)">7d</button>
+                <button class="period-btn" onclick="filterLog('14',this)">14d</button>
+                <button class="period-btn" onclick="filterLog('30',this)">30d</button>
+                <button class="period-btn" onclick="filterLog('all',this)">Todo</button>
+            </div>
+            <div class="log-wrap" style="max-height:400px;overflow-y:auto">
+                <table class="lt"><thead><tr><th>Fecha</th><th>Momento</th><th>Glicemia</th><th>CHO</th><th>Insulina</th><th></th></tr></thead><tbody id="log-tbody"></tbody></table>
+            </div>
+            <div id="log-empty" style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;display:none">Sin registros aún</div>
+            <div class="btn-row">
+                <button class="btn btn-soft btn-sm" onclick="exportCSV()"><svg style="width:14px;height:14px;fill:var(--text-secondary)"><use href="#ico-download"/></svg> CSV</button>
+                <button class="btn btn-danger-soft btn-sm" onclick="clearLogs()"><svg style="width:14px;height:14px;fill:var(--red)"><use href="#ico-trash"/></svg> Limpiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ CHARTS ═══ -->
+    <div class="panel" id="panel-charts">
+        <div class="card">
+            <div class="card-header"><div class="card-icon purple"><svg><use href="#ico-chart"/></svg></div><div><div class="card-title">Estadísticas</div></div></div>
+            <div class="period-sel">
+                <button class="period-btn active" onclick="updateCharts('7',this)">7d</button>
+                <button class="period-btn" onclick="updateCharts('14',this)">14d</button>
+                <button class="period-btn" onclick="updateCharts('30',this)">30d</button>
+                <button class="period-btn" onclick="updateCharts('all',this)">Todo</button>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="sl">Promedio</div><div class="sv" id="s-avg">--</div><div class="ss">mg/dL</div></div>
+                <div class="stat-card"><div class="sl">Desv. Est.</div><div class="sv" id="s-sd">--</div><div class="ss">mg/dL</div></div>
+                <div class="stat-card"><div class="sl">En rango</div><div class="sv" id="s-tir" style="color:var(--green)">--</div><div class="ss">70-180</div></div>
+                <div class="stat-card"><div class="sl">HbA1c est.</div><div class="sv" id="s-a1c" style="color:var(--teal)">--</div><div class="ss">%</div></div>
+            </div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-icon teal"><svg><use href="#ico-drop"/></svg></div><div><div class="card-title">Glicemias</div></div></div><div class="chart-container"><canvas id="ch-gluc"></canvas></div></div>
+        <div class="chart-row">
+            <div class="card"><div class="card-header"><div class="card-icon purple"><svg><use href="#ico-syringe"/></svg></div><div><div class="card-title">Insulina</div></div></div><div class="chart-container"><canvas id="ch-ins"></canvas></div></div>
+            <div class="card"><div class="card-header"><div class="card-icon orange"><svg><use href="#ico-food"/></svg></div><div><div class="card-title">Carbohidratos</div></div></div><div class="chart-container"><canvas id="ch-cho"></canvas></div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-icon green"><svg><use href="#ico-chart"/></svg></div><div><div class="card-title">Tiempo en rango</div></div></div><div class="chart-container" style="height:160px"><canvas id="ch-tir"></canvas></div></div>
+    </div>
+
+    <!-- ═══ ANALYSIS ═══ -->
+    <div class="panel" id="panel-analysis">
+        <div class="card">
+            <div class="card-header"><div class="card-icon red"><svg><use href="#ico-stethoscope"/></svg></div><div><div class="card-title">Análisis clínico</div><div class="card-subtitle">Recomendaciones personalizadas basadas en tus datos</div></div></div>
+            <p style="color:var(--text-muted);font-size:12px;margin-bottom:14px">Mínimo 5 registros. La IA analiza tus patrones y recomienda ajustes.</p>
+            <div class="form-group" style="margin-bottom:14px"><label>API Key de Anthropic</label><input type="text" id="analysis-key" placeholder="sk-ant-..." autocomplete="off" style="font-size:12px"></div>
+            <button class="btn btn-primary" onclick="runAnalysis()" id="btn-analysis"><svg><use href="#ico-stethoscope"/></svg> Obtener análisis</button>
+            <div id="analysis-result" style="margin-top:16px"></div>
+        </div>
+        <div class="disclaimer">⚠️ El análisis es generado por IA. NO reemplaza a tu endocrinólogo. Comparte estos datos con tu equipo médico.</div>
+    </div>
+
+    <!-- ═══ API (hidden by default) ═══ -->
+    <div class="panel" id="panel-api" style="display:none"></div>
+
+    <div class="dev-toggle"><button onclick="toggleDev()">👨‍💻 Soy desarrollador — ver documentación API</button></div>
+</div>
+
+<!-- ═══ HELP MODALS ═══ -->
+<div class="modal-overlay" id="modal-ratio">
+    <div class="modal">
+        <h3>¿Qué es el Ratio Insulina:Carbohidratos?</h3>
+        <p>Es la cantidad de gramos de carbohidratos que cubre 1 unidad de insulina rápida. Tu endocrinólogo te lo indica.</p>
+        <div class="example-box"><strong>Ejemplo:</strong> Si tu ratio es <strong>1:10</strong>, significa que 1 unidad de insulina cubre 10 gramos de carbohidratos.</div>
+        <h3 style="font-size:14px;margin-top:16px">¿Cómo se calcula?</h3>
+        <div class="step"><div class="step-num">1</div><div class="step-text">Tu médico revisa cuánta insulina total usas al día (basal + bolus).</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Aplica la <strong>Regla del 500</strong>: divide 500 por tu dosis total diaria de insulina.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">El resultado es tu ratio aproximado.</div></div>
+        <div class="example-box"><strong>Ejemplo:</strong> Si usas 50U al día → 500 ÷ 50 = <strong>Ratio 1:10</strong><br>(1 unidad cubre 10g de CHO)</div>
+        <p style="font-size:12px;color:var(--orange);margin-top:10px">⚠️ Esta regla es solo una guía inicial. Tu endocrinólogo ajustará el ratio según tus registros reales.</p>
+        <button class="modal-close" onclick="closeHelp('ratio')">Entendido</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-sensi">
+    <div class="modal">
+        <h3>¿Qué es el Factor de Sensibilidad?</h3>
+        <p>Es cuántos mg/dL baja tu glicemia con 1 unidad de insulina rápida. También lo determina tu médico.</p>
+        <div class="example-box"><strong>Ejemplo:</strong> Si tu sensibilidad es <strong>40</strong>, significa que 1 unidad de insulina baja tu glicemia en 40 mg/dL.</div>
+        <h3 style="font-size:14px;margin-top:16px">¿Cómo se calcula?</h3>
+        <div class="step"><div class="step-num">1</div><div class="step-text">Tu médico usa la <strong>Regla del 1800</strong> (insulina rápida): divide 1800 por tu dosis total diaria.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">El resultado es cuánto baja tu glicemia por cada unidad.</div></div>
+        <div class="example-box"><strong>Ejemplo:</strong> Si usas 45U al día → 1800 ÷ 45 = <strong>40 mg/dL</strong><br>(1 unidad te baja 40 mg/dL)</div>
+        <p style="font-size:12px;color:var(--orange);margin-top:10px">⚠️ Esta regla es una aproximación. La sensibilidad varía según la hora del día, ejercicio y estrés. Valida con tu equipo médico.</p>
+        <button class="modal-close" onclick="closeHelp('sensi')">Entendido</button>
+    </div>
+</div>
+
+<script>
+// ═════════════════════════════════════════════════════════
+// DATA
+// ═════════════════════════════════════════════════════════
+const SK='glucohelper_logs', SET='glucohelper_settings';
+const getLogs=()=>{try{return JSON.parse(localStorage.getItem(SK))||[]}catch{return[]}};
+const saveLogs=l=>localStorage.setItem(SK,JSON.stringify(l));
+const addLog=e=>{const l=getLogs();e.id=Date.now()+''+Math.random().toString(36).substr(2,4);l.push(e);l.sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));saveLogs(l);return e};
+const deleteLog=id=>{saveLogs(getLogs().filter(l=>l.id!==id))};
+const filtered=p=>{const l=getLogs();if(p==='all')return l;const c=new Date();c.setDate(c.getDate()-parseInt(p));return l.filter(x=>new Date(x.datetime)>=c)};
+
+// ═════════════════════════════════════════════════════════
+// NAV
+// ═════════════════════════════════════════════════════════
+function switchTab(t){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    const p=document.getElementById('panel-'+t);if(p){p.classList.add('active');p.style.display='block';}
+    document.getElementById('tab-'+t)?.classList.add('active');
+    if(t==='log'){renderLog('7');setDT();}
+    if(t==='charts')updateCharts('7');
+}
+function toggleIOB(){document.getElementById('iob-group').style.display=document.getElementById('terapia').value==='Bomba'?'flex':'none'}
+function selMom(el){el.closest('.moment-tags').querySelectorAll('.moment-tag').forEach(t=>t.classList.remove('selected'));el.classList.add('selected')}
+function getMom(id){const s=document.getElementById(id)?.querySelector('.moment-tag.selected');return s?s.textContent.trim():'Otro'}
+function showHelp(id){document.getElementById('modal-'+id).classList.add('show')}
+function closeHelp(id){document.getElementById('modal-'+id).classList.remove('show')}
+function toggleDev(){const p=document.getElementById('panel-api');if(p.style.display==='none'){p.style.display='block';p.innerHTML='<div class="card"><div class="card-header"><div class="card-icon teal"><svg><use href="#ico-code"/></svg></div><div><div class="card-title">API REST</div><div class="card-subtitle">Documentación para desarrolladores</div></div></div><p style="font-size:13px;color:var(--text-secondary)">Despliega el backend con FastAPI para acceder a los endpoints. Docs en <code>/docs</code>.</p><p style="font-size:12px;color:var(--text-muted);margin-top:8px">POST /api/v1/bolus · GET /api/v1/alimentos · POST /api/v1/analizar-imagen · POST /api/v1/registros/{user_id} · GET /api/v1/estadisticas/{user_id}</p></div>';switchTab('api')}else{p.style.display='none'}}
+
+// ═════════════════════════════════════════════════════════
+// BOLUS CALC
+// ═════════════════════════════════════════════════════════
+function calcBolus(){
+    const r=+document.getElementById('ratio').value,s=+document.getElementById('sensibilidad').value,
+        obj=+document.getElementById('objetivo').value,tp=document.getElementById('terapia').value,
+        iob=+(document.getElementById('iob').value)||0,g=+document.getElementById('glicemia').value,
+        cho=+document.getElementById('carbohidratos').value,mom=getMom('moment-calc');
+    if(!g||!r||!s||!obj||isNaN(cho)){alert('Completa los campos');return}
+    const ba=cho/r,dif=g-obj,cbr=dif/s;let cc=cbr,id=0;
+    if(cc>0&&iob>0){id=Math.min(iob,cc);cc-=id}
+    let tot=ba+cc;const w=[];
+    if(g<70)w.push({t:'danger',m:'🚨 Hipoglicemia (<70). Trata con 15g de CHO rápidos primero.'});
+    else if(g<80)w.push({t:'warn',m:'Glicemia baja. Considera reducir dosis.'});
+    if(cbr<0)w.push({t:'info',m:'Glicemia bajo objetivo. Se resta del bolus.'});
+    if(id>0)w.push({t:'info',m:`Se descontaron ${id.toFixed(1)}U de insulina activa.`});
+    if(tot<0){w.push({t:'warn',m:'Bolus negativo. Come sin inyectar.'});tot=0}
+    if(g>300)w.push({t:'danger',m:'🚨 Glicemia >300. Verifica cetonas.'});
+    let rec;if(tp==='Bomba')rec=Math.round(tot*20)/20;else rec=Math.round(tot*2)/2;
+    if(rec>20)w.push({t:'warn',m:'Bolus alto (>20U). Verifica datos.'});
+    addLog({datetime:new Date().toISOString(),glicemia:g,cho,insulina:rec,momento:mom,notas:`Bolus: ${ba.toFixed(1)}+${cc.toFixed(1)}=${rec}U`,source:'calc'});
+    saveSettings();
+    document.getElementById('resultado').innerHTML=`
+    <div class="result-card">
+        <div class="bolus-display"><div class="bolus-label">Dosis recomendada</div><div class="bolus-value">${rec}<span class="bolus-unit"> U</span></div>
+        <div style="color:var(--text-muted);font-size:12px;margin-top:6px">Exacto: ${tot.toFixed(2)}U</div></div>
         <div class="detail-grid">
-            <div class="detail-item"><div class="label">Alimenticio</div><div class="value" style="color:var(--accent)">${bolusAlim.toFixed(1)}U</div></div>
-            <div class="detail-item"><div class="label">Corrector</div><div class="value" style="color:${bolusCor>=0?'var(--success)':'var(--warning)'}">${bolusCor>=0?'+':''}${bolusCor.toFixed(1)}U</div></div>
-            <div class="detail-item"><div class="label">IOB</div><div class="value" style="color:var(--accent-2)">-${iobDesc.toFixed(1)}U</div></div>
+            <div class="detail-item"><div class="dl">Alimenticio</div><div class="dv" style="color:var(--teal)">${ba.toFixed(1)}</div></div>
+            <div class="detail-item"><div class="dl">Corrector</div><div class="dv" style="color:${cc>=0?'var(--green)':'var(--orange)'}">${cc>=0?'+':''}${cc.toFixed(1)}</div></div>
+            <div class="detail-item"><div class="dl">IOB</div><div class="dv" style="color:var(--purple)">-${id.toFixed(1)}</div></div>
         </div>
-        <div class="formula-box">
-            <h4>Detalle del Cálculo</h4>
-            <div class="formula-line"><span class="dot blue"></span> ${cho}g ÷ ${ratio} = ${bolusAlim.toFixed(2)}U (alimenticio)</div>
-            <div class="formula-line"><span class="dot green"></span> (${glicemia} − ${objetivo}) ÷ ${sensibilidad} = ${bolusCorBruto.toFixed(2)}U (corrector)</div>
-            ${iobDesc > 0 ? `<div class="formula-line"><span class="dot purple"></span> ${bolusCorBruto.toFixed(2)}U − ${iobDesc.toFixed(2)}U IOB = ${bolusCor.toFixed(2)}U</div>` : ''}
-            <div class="formula-line"><span class="dot yellow"></span> Total: ${total.toFixed(2)}U → <strong>${rec}U</strong></div>
+        <div class="formula-box"><h4>Cálculo</h4>
+            <div class="fl"><span class="dot" style="background:var(--teal)"></span>${cho}g ÷ ${r} = ${ba.toFixed(2)}U</div>
+            <div class="fl"><span class="dot" style="background:var(--green)"></span>(${g} − ${obj}) ÷ ${s} = ${cbr.toFixed(2)}U</div>
+            <div class="fl"><span class="dot" style="background:var(--purple)"></span>Total: ${tot.toFixed(2)}U → <strong>${rec}U</strong></div>
         </div>
-        <div style="padding: 10px 0; color: var(--success); font-size: 13px;">✅ Registro guardado automáticamente · ${momento}</div>
-        ${advertencias.map(a => `<div class="warning-box ${a.type}">${a.text}</div>`).join('')}
+        <div class="alert alert-success">✓ Registro guardado · ${mom}</div>
+        ${w.map(x=>`<div class="alert alert-${x.t}">${x.m}</div>`).join('')}
     </div>`;
-    document.getElementById('resultado').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('resultado').scrollIntoView({behavior:'smooth'});
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// FOOD DATABASE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
+// FOOD DB
+// ═════════════════════════════════════════════════════════
+const FD={"arroz blanco cocido":{c:28,p:180},"arroz integral":{c:23,p:180},"pasta cocida":{c:25,p:200},"pan blanco":{c:49,p:60},"pan integral":{c:41,p:60},"tortilla maíz":{c:44,p:30},"avena cocida":{c:12,p:240},"quinoa":{c:21,p:185},"cereal":{c:75,p:40},"manzana":{c:14,p:180},"plátano":{c:23,p:120},"naranja":{c:12,p:150},"uvas":{c:17,p:150},"fresa":{c:8,p:150},"sandía":{c:8,p:280},"mango":{c:15,p:200},"piña":{c:13,p:165},"durazno":{c:10,p:150},"pera":{c:15,p:180},"kiwi":{c:15,p:75},"papa cocida":{c:17,p:200},"papa frita":{c:36,p:150},"camote":{c:20,p:150},"frijoles":{c:22,p:170},"lentejas":{c:20,p:200},"garbanzos":{c:27,p:165},"leche":{c:5,p:240},"yogur natural":{c:5,p:200},"yogur con fruta":{c:15,p:200},"helado":{c:24,p:100},"jugo naranja":{c:10,p:250},"bebida/refresco":{c:11,p:350},"pizza":{c:33,p:120},"hamburguesa":{c:20,p:200},"sushi 6pz":{c:30,p:180},"empanada":{c:30,p:120},"tacos":{c:22,p:200},"galletas":{c:65,p:30},"chocolate":{c:56,p:40},"pollo":{c:0,p:150},"carne":{c:0,p:150},"pescado":{c:0,p:150},"huevo":{c:1,p:50},"ensalada":{c:2,p:150},"tomate":{c:4,p:120},"zanahoria":{c:10,p:80},"brócoli":{c:7,p:150},"maíz/elote":{c:19,p:150},"completo/hotdog":{c:35,p:160},"sopaipilla":{c:30,p:100}};
 
-const FOOD_DB = {
-    "arroz blanco cocido":{cho100:28,porcion:180},"arroz integral cocido":{cho100:23,porcion:180},
-    "pasta cocida":{cho100:25,porcion:200},"pan blanco":{cho100:49,porcion:60},
-    "pan integral":{cho100:41,porcion:60},"tortilla de maíz":{cho100:44,porcion:30},
-    "tortilla de harina":{cho100:48,porcion:45},"avena cocida":{cho100:12,porcion:240},
-    "quinoa cocida":{cho100:21,porcion:185},"cereal de desayuno":{cho100:75,porcion:40},
-    "manzana":{cho100:14,porcion:180},"plátano / banana":{cho100:23,porcion:120},
-    "naranja":{cho100:12,porcion:150},"uvas":{cho100:17,porcion:150},
-    "fresa":{cho100:8,porcion:150},"sandía":{cho100:8,porcion:280},
-    "mango":{cho100:15,porcion:200},"piña":{cho100:13,porcion:165},
-    "papa / patata cocida":{cho100:17,porcion:200},"papa / patata frita":{cho100:36,porcion:150},
-    "camote / batata":{cho100:20,porcion:150},"frijoles / judías cocidos":{cho100:22,porcion:170},
-    "lentejas cocidas":{cho100:20,porcion:200},"garbanzos cocidos":{cho100:27,porcion:165},
-    "leche entera":{cho100:5,porcion:240},"yogur natural":{cho100:5,porcion:200},
-    "yogur con fruta":{cho100:15,porcion:200},"helado":{cho100:24,porcion:100},
-    "jugo de naranja":{cho100:10,porcion:250},"refresco / soda":{cho100:11,porcion:350},
-    "cerveza":{cho100:3.5,porcion:350},"pizza (1 porción)":{cho100:33,porcion:120},
-    "hamburguesa con pan":{cho100:20,porcion:200},"sushi (6 piezas)":{cho100:30,porcion:180},
-    "empanada":{cho100:30,porcion:120},"tacos (2 unidades)":{cho100:22,porcion:200},
-    "galletas":{cho100:65,porcion:30},"chocolate con leche":{cho100:56,porcion:40},
-    "barra de granola":{cho100:60,porcion:35},"pollo":{cho100:0,porcion:150},
-    "carne de res":{cho100:0,porcion:150},"pescado":{cho100:0,porcion:150},
-    "huevo":{cho100:1,porcion:50},"queso":{cho100:1.3,porcion:30},
-    "ensalada verde":{cho100:2,porcion:150},"tomate":{cho100:4,porcion:120},
-    "zanahoria":{cho100:10,porcion:80},"brócoli":{cho100:7,porcion:150},
-    "maíz / elote":{cho100:19,porcion:150},
-};
+function searchFood(q){const c=document.getElementById('food-results');if(!q||q.length<2){c.innerHTML='';return}
+const ql=q.toLowerCase(),m=Object.entries(FD).filter(([n])=>n.includes(ql)).map(([n,d])=>{const ch=(d.c*d.p/100).toFixed(1);return`<div class="food-item" onclick="addFood('${n}',${ch},${d.p})"><div><div class="fn">${n}</div><div class="fp">${d.p}g · ${d.c}g/100g</div></div><div class="fc">${ch}g</div></div>`});
+c.innerHTML=m.length?m.join(''):'<p style="color:var(--text-muted);padding:14px;text-align:center;font-size:13px">No encontrado</p>'}
+let selFoods=[];
+function addFood(n,c,p){selFoods.push({name:n,cho:+c,p});renderSF()}
+function removeFood(i){selFoods.splice(i,1);renderSF()}
+function renderSF(){const c=document.getElementById('selected-foods'),tb=document.getElementById('total-bar'),btn=document.getElementById('btn-use-cho');
+if(!selFoods.length){c.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px">Selecciona alimentos de la búsqueda</p>';tb.style.display='none';btn.style.display='none';return}
+const tot=selFoods.reduce((s,f)=>s+f.cho,0);c.innerHTML=selFoods.map((f,i)=>`<div class="selected-food"><div class="sf-info"><span class="sf-name">${f.name}</span><span class="sf-cho">${f.cho}g</span></div><button class="remove-food" onclick="removeFood(${i})">✕</button></div>`).join('');
+tb.style.display='flex';document.getElementById('total-cho').textContent=tot.toFixed(1)+'g';btn.style.display='flex'}
+function useCHO(){document.getElementById('carbohidratos').value=Math.round(selFoods.reduce((s,f)=>s+f.cho,0));switchTab('calc');document.getElementById('glicemia').focus()}
 
-function searchFood(query) {
-    const c = document.getElementById('food-results');
-    if (!query || query.length < 2) { c.innerHTML = ''; return; }
-    const q = query.toLowerCase();
-    const matches = Object.entries(FOOD_DB).filter(([n]) => n.includes(q)).map(([name, d]) => {
-        const cho = (d.cho100 * d.porcion / 100).toFixed(1);
-        return `<div class="food-item" onclick="addFood('${name}',${cho},${d.porcion})">
-            <div><div class="name">${name}</div><div class="portion">${d.porcion}g · ${d.cho100}g/100g</div></div>
-            <div class="cho">${cho}g</div></div>`;
-    });
-    c.innerHTML = matches.length ? matches.join('') : '<p style="color:var(--text-dim);padding:16px;text-align:center">No encontrado</p>';
-}
-
-let selectedFoods = [];
-function addFood(n, c, p) { selectedFoods.push({name:n,cho:parseFloat(c),porcion:p}); renderSelectedFoods(); }
-function removeFood(i) { selectedFoods.splice(i, 1); renderSelectedFoods(); }
-function renderSelectedFoods() {
-    const c = document.getElementById('selected-foods');
-    const tb = document.getElementById('total-bar');
-    const btn = document.getElementById('btn-usar-cho');
-    if (!selectedFoods.length) {
-        c.innerHTML = '<p style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">Busca y selecciona alimentos</p>';
-        tb.style.display = 'none'; btn.style.display = 'none'; return;
-    }
-    const total = selectedFoods.reduce((s, f) => s + f.cho, 0);
-    c.innerHTML = selectedFoods.map((f, i) => `<div class="selected-food"><div class="info"><span class="name">${f.name}</span><span class="cho">${f.cho}g</span></div><button class="remove-food" onclick="removeFood(${i})">✕</button></div>`).join('');
-    tb.style.display = 'flex'; document.getElementById('total-cho').textContent = `${total.toFixed(1)}g`;
-    btn.style.display = 'block';
-}
-function usarCHOenCalculadora() {
-    document.getElementById('carbohidratos').value = Math.round(selectedFoods.reduce((s,f) => s+f.cho, 0));
-    switchTab('calculator'); document.getElementById('glicemia').focus();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
 // PHOTO
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
+let selImg=null;
+function handleImage(inp){const f=inp.files[0];if(!f)return;selImg=f;const r=new FileReader();r.onload=e=>{const z=document.getElementById('upload-zone');z.classList.add('has-image');z.innerHTML=`<img src="${e.target.result}"><input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)" style="display:none">`;document.getElementById('btn-analyze').disabled=false};r.readAsDataURL(f)}
 
-let selectedImage = null;
-function handleImage(input) {
-    const file = input.files[0]; if (!file) return;
-    selectedImage = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const zone = document.getElementById('upload-zone');
-        zone.classList.add('has-image');
-        zone.innerHTML = `<img src="${e.target.result}"><input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleImage(this)" style="display:none">`;
-        document.getElementById('btn-analizar').disabled = false;
-    };
-    reader.readAsDataURL(file);
-}
+async function analyzeImage(){if(!selImg)return;const key=document.getElementById('api-key').value.trim(),btn=document.getElementById('btn-analyze'),rd=document.getElementById('photo-result');
+if(!key){rd.innerHTML='<div class="alert alert-warn" style="margin-top:14px">Necesitas una API key de Anthropic. Obtén una en console.anthropic.com</div>';return}
+btn.disabled=true;btn.innerHTML='⏳ Analizando...';
+try{const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(selImg)});
+const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:selImg.type||'image/jpeg',data:b64}},{type:'text',text:'Eres nutricionista experto en conteo de carbohidratos para diabetes tipo 1. Analiza esta imagen de alimentos.\n\nIMPORTANTE: Si ves una moneda en la foto (probablemente una moneda de 500 pesos chilenos, diámetro 26.5mm), úsala como REFERENCIA DE ESCALA para estimar con mayor precisión el tamaño real de los alimentos y sus porciones en gramos.\n\nSi NO ves moneda, estima las porciones de forma conservadora.\n\nResponde SOLO con JSON válido (sin markdown, sin backticks):\n{"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_estimados":0}],"carbohidratos_totales":0,"confianza":"alta|media|baja","moneda_detectada":true/false,"notas":"..."}'}]}]})});
+const data=await res.json();if(data.content?.[0]){const result=JSON.parse(data.content[0].text);
+const coinNote=result.moneda_detectada?'<div class="alert alert-success" style="margin-top:10px">✓ Moneda detectada como referencia de escala</div>':'<div class="alert alert-info" style="margin-top:10px">Sin moneda de referencia. Precisión reducida.</div>';
+rd.innerHTML=`<div class="result-card" style="margin-top:16px"><div class="bolus-display"><div class="bolus-label">CHO estimados</div><div class="bolus-value">${result.carbohidratos_totales}<span class="bolus-unit"> g</span></div><div style="color:var(--text-muted);font-size:12px;margin-top:4px">Confianza: ${result.confianza}</div></div>
+${result.alimentos.map(a=>`<div class="selected-food"><div class="sf-info"><span class="sf-name">${a.nombre}</span><span style="color:var(--text-muted);font-size:11px">${a.porcion_estimada_g}g</span></div><span class="sf-cho">${a.cho_estimados}g</span></div>`).join('')}
+${coinNote}
+<button class="btn btn-outline" style="margin-top:12px" onclick="document.getElementById('carbohidratos').value=${result.carbohidratos_totales};switchTab('calc')"><svg><use href="#ico-syringe"/></svg> Calcular bolus</button></div>`}
+else if(data.error)rd.innerHTML=`<div class="alert alert-danger" style="margin-top:14px">${data.error.message}</div>`}
+catch(e){rd.innerHTML=`<div class="alert alert-danger" style="margin-top:14px">Error: ${e.message}</div>`}
+btn.disabled=false;btn.innerHTML='<svg><use href="#ico-stethoscope"/></svg> Analizar con IA'}
 
-async function analizarImagen() {
-    if (!selectedImage) return;
-    const apiKey = document.getElementById('api-key').value.trim();
-    const btn = document.getElementById('btn-analizar');
-    const rd = document.getElementById('photo-result');
-    btn.disabled = true; btn.textContent = '⏳ Analizando...';
-    if (!apiKey) {
-        rd.innerHTML = `<div class="result-card" style="margin-top:20px"><p style="color:var(--text-muted)">Necesitas una API key de Anthropic para análisis por IA. Obtén una en <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a></p></div>`;
-        btn.disabled = false; btn.textContent = '🤖 Analizar con IA'; return;
-    }
-    try {
-        const base64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(selectedImage); });
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-            body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,messages:[{role:'user',content:[
-                {type:'image',source:{type:'base64',media_type:selectedImage.type||'image/jpeg',data:base64}},
-                {type:'text',text:'Eres nutricionista experto en conteo de carbohidratos para diabetes. Analiza esta imagen y responde SOLO JSON (sin markdown):\n{"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_estimados":0}],"carbohidratos_totales":0,"confianza":"alta|media|baja","notas":"..."}'}
-            ]}]})
-        });
-        const data = await res.json();
-        if (data.content?.[0]) {
-            const result = JSON.parse(data.content[0].text);
-            rd.innerHTML = `<div class="result-card" style="margin-top:20px">
-                <div class="bolus-display"><div class="bolus-label">CHO Estimados</div><div class="bolus-value">${result.carbohidratos_totales}<span class="bolus-unit">g</span></div><div style="color:var(--text-dim);font-size:13px;margin-top:4px">Confianza: ${result.confianza}</div></div>
-                ${result.alimentos.map(a => `<div class="selected-food"><div class="info"><span class="name">${a.nombre}</span><span style="color:var(--text-dim);font-size:12px">${a.porcion_estimada_g}g</span></div><span class="cho">${a.cho_estimados}g</span></div>`).join('')}
-                <div style="margin-top:16px"><button class="btn btn-secondary" onclick="document.getElementById('carbohidratos').value=${result.carbohidratos_totales};switchTab('calculator');">🧮 Usar en Calculadora</button></div>
-                ${result.notas ? `<div class="warning-box info" style="margin-top:12px">${result.notas}</div>` : ''}</div>`;
-        } else if (data.error) rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${data.error.message}</div>`;
-    } catch(e) { rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${e.message}</div>`; }
-    btn.disabled = false; btn.textContent = '🤖 Analizar con IA';
-}
+// ═════════════════════════════════════════════════════════
+// LOG
+// ═════════════════════════════════════════════════════════
+function setDT(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());document.getElementById('reg-dt').value=n.toISOString().slice(0,16)}
+function manualLog(){const dt=document.getElementById('reg-dt').value,gl=+document.getElementById('reg-gl').value,ch=+document.getElementById('reg-cho').value||0,ins=+document.getElementById('reg-ins').value||0,mom=getMom('moment-log'),notes=document.getElementById('reg-notes').value.trim();
+if(!dt||!gl){alert('Ingresa fecha y glicemia');return}
+addLog({datetime:new Date(dt).toISOString(),glicemia:gl,cho:ch,insulina:ins,momento:mom,notas:notes,source:'manual'});
+document.getElementById('reg-gl').value='';document.getElementById('reg-cho').value='';document.getElementById('reg-ins').value='';document.getElementById('reg-notes').value='';setDT();renderLog(curLogP);alert('✓ Guardado')}
+let curLogP='7';
+function filterLog(p,btn){curLogP=p;if(btn){btn.closest('.period-sel').querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}renderLog(p)}
+function renderLog(p){const logs=filtered(p),tb=document.getElementById('log-tbody'),emp=document.getElementById('log-empty');
+if(!logs.length){tb.innerHTML='';emp.style.display='block';return}emp.style.display='none';
+tb.innerHTML=logs.map(l=>{const d=new Date(l.datetime),bg=l.glicemia<70?'badge-low':l.glicemia<=180?'badge-ok':l.glicemia<=250?'badge-high':'badge-vhigh';
+return`<tr><td style="font-size:11px">${d.toLocaleDateString('es')}<br><span style="color:var(--text-muted)">${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</span></td><td style="font-size:11px">${l.momento||'—'}</td><td><span class="badge ${bg}">${l.glicemia}</span></td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${l.cho||'—'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal)">${l.insulina||'—'}</td><td><button class="del-btn" onclick="if(confirm('¿Eliminar?')){deleteLog('${l.id}');renderLog('${curLogP}')}">✕</button></td></tr>`}).join('')}
+function exportCSV(){const l=getLogs();if(!l.length){alert('Sin registros');return}const h='Fecha,Hora,Momento,Glicemia,CHO,Insulina,Notas\n',rows=l.map(x=>{const d=new Date(x.datetime);return`${d.toLocaleDateString('es')},${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})},${(x.momento||'').replace(/,/g,' ')},${x.glicemia},${x.cho||0},${x.insulina||0},"${(x.notas||'').replace(/"/g,"'")}"`;}).join('\n');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h+rows],{type:'text/csv'}));a.download=`glucohelper_${new Date().toISOString().slice(0,10)}.csv`;a.click()}
+function clearLogs(){if(confirm('¿Eliminar TODOS los registros?')){saveLogs([]);renderLog(curLogP)}}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// REGISTRY
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function setDefaultDatetime() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('reg-datetime').value = now.toISOString().slice(0, 16);
-}
-
-function registrarManual() {
-    const dt = document.getElementById('reg-datetime').value;
-    const gl = parseFloat(document.getElementById('reg-glicemia').value);
-    const ch = parseFloat(document.getElementById('reg-cho').value) || 0;
-    const ins = parseFloat(document.getElementById('reg-insulin').value) || 0;
-    const mom = getSelectedMoment('reg');
-    const notas = document.getElementById('reg-notes').value.trim();
-
-    if (!dt || !gl) { alert('Ingresa al menos fecha/hora y glicemia'); return; }
-
-    addLog({ datetime: new Date(dt).toISOString(), glicemia: gl, cho: ch, insulina: ins, momento: mom, notas: notas || '', source: 'manual' });
-
-    document.getElementById('reg-glicemia').value = '';
-    document.getElementById('reg-cho').value = '';
-    document.getElementById('reg-insulin').value = '';
-    document.getElementById('reg-notes').value = '';
-    setDefaultDatetime();
-    renderLogTable('7d');
-    alert('✅ Registro guardado');
-}
-
-let currentLogPeriod = '7d';
-function filterLogs(period, btn) {
-    currentLogPeriod = period;
-    if (btn) { btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-    renderLogTable(period);
-}
-
-function renderLogTable(period) {
-    const logs = getFilteredLogs(period === 'all' ? 'all' : parseInt(period));
-    const tbody = document.getElementById('log-tbody');
-    const empty = document.getElementById('log-empty');
-
-    if (!logs.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-
-    tbody.innerHTML = logs.map(l => {
-        const d = new Date(l.datetime);
-        const gBadge = l.glicemia < 70 ? 'badge-low' : l.glicemia <= 180 ? 'badge-normal' : l.glicemia <= 250 ? 'badge-high' : 'badge-very-high';
-        return `<tr>
-            <td>${d.toLocaleDateString('es')}</td>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</td>
-            <td><span style="font-size:12px">${l.momento||'—'}</span></td>
-            <td><span class="badge ${gBadge}">${l.glicemia} mg/dL</span></td>
-            <td style="font-family:'JetBrains Mono',monospace">${l.cho||'—'}g</td>
-            <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${l.insulina||'—'}U</td>
-            <td style="font-size:12px;color:var(--text-dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notas||''}</td>
-            <td><button class="del-btn" onclick="if(confirm('¿Eliminar?')){deleteLog('${l.id}');renderLogTable('${currentLogPeriod}')}">🗑</button></td>
-        </tr>`;
-    }).join('');
-}
-
-function exportCSV() {
-    const logs = getLogs();
-    if (!logs.length) { alert('No hay registros'); return; }
-    const header = 'Fecha,Hora,Momento,Glicemia_mgdL,CHO_g,Insulina_U,Notas\n';
-    const rows = logs.map(l => {
-        const d = new Date(l.datetime);
-        return `${d.toLocaleDateString('es')},${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})},${(l.momento||'').replace(/,/g,' ')},${l.glicemia},${l.cho||0},${l.insulina||0},"${(l.notas||'').replace(/"/g,"'")}"`;
-    }).join('\n');
-    const blob = new Blob([header + rows], {type:'text/csv'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `glucohelper_registros_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-}
-
-function clearAllLogs() {
-    if (confirm('¿Estás seguro de eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
-        saveLogs([]); renderLogTable(currentLogPeriod);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
 // CHARTS
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
+let cG,cI,cC,cT;
+function updateCharts(p,btn){if(btn){btn.closest('.period-sel').querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+const logs=filtered(p).slice().reverse(),gV=logs.map(l=>l.glicemia).filter(g=>g);
+if(gV.length){const avg=gV.reduce((a,b)=>a+b,0)/gV.length,sd=Math.sqrt(gV.reduce((s,v)=>s+Math.pow(v-avg,2),0)/gV.length),tir=(gV.filter(v=>v>=70&&v<=180).length/gV.length*100),a1c=(avg+46.7)/28.7;
+document.getElementById('s-avg').textContent=Math.round(avg);document.getElementById('s-sd').textContent=Math.round(sd);
+document.getElementById('s-tir').textContent=tir.toFixed(0)+'%';document.getElementById('s-tir').style.color=tir>=70?'var(--green)':tir>=50?'var(--orange)':'var(--red)';
+document.getElementById('s-a1c').textContent=a1c.toFixed(1);document.getElementById('s-a1c').style.color=a1c<=7?'var(--green)':a1c<=8?'var(--orange)':'var(--red)'}
+const lbl=logs.map(l=>new Date(l.datetime)),gD=logs.map(l=>l.glicemia),iD=logs.map(l=>l.insulina||0),cD=logs.map(l=>l.cho||0);
+const gc='rgba(0,0,0,0.05)',tc='#8899a8';
+if(cG)cG.destroy();cG=new Chart(document.getElementById('ch-gluc'),{type:'line',data:{labels:lbl,datasets:[{label:'Glicemia',data:gD,borderColor:'#1a9aaa',backgroundColor:'rgba(26,154,170,0.08)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:gD.map(v=>v<70?'#c94a4a':v>180?'#d68c2e':'#2d9f6f'),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'time',time:{unit:'day',displayFormats:{day:'dd/MM'}},ticks:{color:tc},grid:{color:gc}},y:{min:40,max:350,ticks:{color:tc},grid:{color:gc}}}},plugins:[{id:'tr',beforeDraw(ch){const{ctx,chartArea:{left,right},scales:{y}}=ch;const t=y.getPixelForValue(180),b=y.getPixelForValue(70);ctx.fillStyle='rgba(45,159,111,0.06)';ctx.fillRect(left,t,right-left,b-t);ctx.strokeStyle='rgba(45,159,111,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(left,t);ctx.lineTo(right,t);ctx.stroke();ctx.beginPath();ctx.moveTo(left,b);ctx.lineTo(right,b);ctx.stroke();ctx.setLineDash([])}}]});
+if(cI)cI.destroy();cI=new Chart(document.getElementById('ch-ins'),{type:'bar',data:{labels:lbl,datasets:[{label:'Insulina',data:iD,backgroundColor:'rgba(124,107,180,0.5)',borderColor:'#7c6bb4',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'time',time:{unit:'day',displayFormats:{day:'dd/MM'}},ticks:{color:tc},grid:{color:gc}},y:{beginAtZero:true,ticks:{color:tc},grid:{color:gc}}}}});
+if(cC)cC.destroy();cC=new Chart(document.getElementById('ch-cho'),{type:'bar',data:{labels:lbl,datasets:[{label:'CHO',data:cD,backgroundColor:'rgba(214,140,46,0.4)',borderColor:'#d68c2e',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'time',time:{unit:'day',displayFormats:{day:'dd/MM'}},ticks:{color:tc},grid:{color:gc}},y:{beginAtZero:true,ticks:{color:tc},grid:{color:gc}}}}});
+if(gV.length){const lo=gV.filter(v=>v<70).length,ok=gV.filter(v=>v>=70&&v<=180).length,hi=gV.filter(v=>v>180&&v<=250).length,vh=gV.filter(v=>v>250).length,n=gV.length;
+if(cT)cT.destroy();cT=new Chart(document.getElementById('ch-tir'),{type:'bar',data:{labels:[''],datasets:[{label:`<70 (${(lo/n*100).toFixed(0)}%)`,data:[lo/n*100],backgroundColor:'#c94a4a'},{label:`70-180 (${(ok/n*100).toFixed(0)}%)`,data:[ok/n*100],backgroundColor:'#2d9f6f'},{label:`180-250 (${(hi/n*100).toFixed(0)}%)`,data:[hi/n*100],backgroundColor:'#d68c2e'},{label:`>250 (${(vh/n*100).toFixed(0)}%)`,data:[vh/n*100],backgroundColor:'#b33b3b'}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:10}}}},scales:{x:{stacked:true,max:100,ticks:{color:tc,callback:v=>v+'%'},grid:{color:gc}},y:{stacked:true,display:false}}}})}}
 
-let chartGlucose, chartInsulin, chartCarbs, chartMoments, chartTIR;
-let currentChartPeriod = '7d';
+// ═════════════════════════════════════════════════════════
+// ANALYSIS
+// ═════════════════════════════════════════════════════════
+async function runAnalysis(){const key=document.getElementById('analysis-key').value.trim(),logs=getLogs(),rd=document.getElementById('analysis-result'),btn=document.getElementById('btn-analysis');
+if(!key){alert('Ingresa tu API key');return}if(logs.length<5){alert('Necesitas al menos 5 registros (tienes '+logs.length+')');return}
+btn.disabled=true;rd.innerHTML='<div class="analysis-loading"><div class="spinner"></div><p>Analizando '+logs.length+' registros...</p></div>';
+const gV=logs.map(l=>l.glicemia).filter(g=>g),n=gV.length,avg=gV.reduce((a,b)=>a+b,0)/n,sd=Math.sqrt(gV.reduce((s,v)=>s+Math.pow(v-avg,2),0)/n),tir=(gV.filter(v=>v>=70&&v<=180).length/n*100).toFixed(1),tirL=(gV.filter(v=>v<70).length/n*100).toFixed(1),tirH=(gV.filter(v=>v>180).length/n*100).toFixed(1),a1c=((avg+46.7)/28.7).toFixed(1);
+const byM={};logs.forEach(l=>{const m=l.momento||'Otro';if(!byM[m])byM[m]={g:[],i:[],c:[]};if(l.glicemia)byM[m].g.push(l.glicemia);if(l.insulina)byM[m].i.push(l.insulina);if(l.cho)byM[m].c.push(l.cho)});
+const mSum=Object.entries(byM).map(([m,d])=>`${m}: promGlic=${d.g.length?Math.round(d.g.reduce((a,b)=>a+b,0)/d.g.length):'N/A'}, promIns=${d.i.length?(d.i.reduce((a,b)=>a+b,0)/d.i.length).toFixed(1):'N/A'}, promCHO=${d.c.length?Math.round(d.c.reduce((a,b)=>a+b,0)/d.c.length):'N/A'} (n=${d.g.length})`).join('\n');
+const detail=logs.slice(0,30).map(l=>{const d=new Date(l.datetime);return`${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}|${l.momento||'?'}|G:${l.glicemia}|CHO:${l.cho||0}|Ins:${l.insulina||0}${l.notas?'|'+l.notas:''}`}).join('\n');
+const ratio=document.getElementById('ratio').value,sensi=document.getElementById('sensibilidad').value,obj=document.getElementById('objetivo').value,tp=document.getElementById('terapia').value;
+const prompt=`Eres un endocrinólogo con 30 años de experiencia en diabetes tipo 1. Analiza los datos de este paciente y da recomendaciones clínicas claras.
 
-function updateCharts(period, btn) {
-    currentChartPeriod = period;
-    if (btn) { btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-    const logs = getFilteredLogs(period === 'all' ? 'all' : parseInt(period)).slice().reverse();
+CONFIGURACIÓN: Ratio 1:${ratio}, Sensibilidad ${sensi}, Objetivo ${obj}, Terapia ${tp}
 
-    // Stats
-    const gValues = logs.map(l => l.glicemia).filter(g => g);
-    if (gValues.length) {
-        const avg = gValues.reduce((a, b) => a + b, 0) / gValues.length;
-        const sd = Math.sqrt(gValues.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / gValues.length);
-        const tir = (gValues.filter(v => v >= 70 && v <= 180).length / gValues.length * 100);
-        const a1c = ((avg + 46.7) / 28.7);
-        document.getElementById('stat-avg').textContent = Math.round(avg);
-        document.getElementById('stat-sd').textContent = Math.round(sd);
-        document.getElementById('stat-tir').textContent = tir.toFixed(0) + '%';
-        document.getElementById('stat-tir').style.color = tir >= 70 ? 'var(--success)' : tir >= 50 ? 'var(--warning)' : 'var(--danger)';
-        document.getElementById('stat-a1c').textContent = a1c.toFixed(1);
-        document.getElementById('stat-a1c').style.color = a1c <= 7 ? 'var(--success)' : a1c <= 8 ? 'var(--warning)' : 'var(--danger)';
-    } else {
-        ['stat-avg','stat-sd','stat-tir','stat-a1c'].forEach(id => document.getElementById(id).textContent = '--');
-    }
+ESTADÍSTICAS (${n} registros): Promedio ${Math.round(avg)}, DE ${Math.round(sd)}, CV ${(sd/avg*100).toFixed(1)}%, TIR ${tir}%, Hipo ${tirL}%, Hiper ${tirH}%, A1c est ${a1c}%
 
-    const labels = logs.map(l => new Date(l.datetime));
-    const gData = logs.map(l => l.glicemia);
-    const iData = logs.map(l => l.insulina || 0);
-    const cData = logs.map(l => l.cho || 0);
+POR MOMENTO:\n${mSum}
 
-    const gridColor = 'rgba(255,255,255,0.06)';
-    const tickColor = '#64748b';
+ÚLTIMOS 30 REGISTROS:\n${detail}
 
-    // Glucose Chart
-    if (chartGlucose) chartGlucose.destroy();
-    chartGlucose = new Chart(document.getElementById('chart-glucose'), {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Glicemia (mg/dL)',
-                data: gData,
-                borderColor: '#38bdf8',
-                backgroundColor: 'rgba(56,189,248,0.1)',
-                fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6,
-                pointBackgroundColor: gData.map(v => v < 70 ? '#f87171' : v > 180 ? '#fbbf24' : '#34d399'),
-                borderWidth: 2,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                annotation: {},
-            },
-            scales: {
-                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
-                y: { min: 40, max: 400, ticks: { color: tickColor }, grid: { color: gridColor } }
-            }
-        },
-        plugins: [{
-            id: 'targetRange',
-            beforeDraw(chart) {
-                const {ctx, chartArea: {left, right}, scales: {y}} = chart;
-                const top70 = y.getPixelForValue(180);
-                const bot70 = y.getPixelForValue(70);
-                ctx.fillStyle = 'rgba(52,211,153,0.08)';
-                ctx.fillRect(left, top70, right - left, bot70 - top70);
-                ctx.strokeStyle = 'rgba(52,211,153,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([5,5]);
-                ctx.beginPath(); ctx.moveTo(left, top70); ctx.lineTo(right, top70); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(left, bot70); ctx.lineTo(right, bot70); ctx.stroke();
-                ctx.setLineDash([]);
-            }
-        }]
-    });
+Responde en español con HTML (<h3> para secciones, <p> para texto, <strong> para énfasis). Estructura:
+1. RESUMEN: 2-3 oraciones evaluando el control
+2. PATRONES: Identifica patrones por momento del día con datos específicos
+3. AJUSTES SUGERIDOS: Evalúa si ratio y sensibilidad son adecuados. Da números concretos
+4. RECOMENDACIONES: 3-6 acciones priorizadas con números
+5. ALERTAS: Hipoglicemias o patrones peligrosos
+6. PLAN SEMANAL: 3 acciones concretas para esta semana
 
-    // Insulin Chart
-    if (chartInsulin) chartInsulin.destroy();
-    chartInsulin = new Chart(document.getElementById('chart-insulin'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Insulina (U)', data: iData,
-                backgroundColor: 'rgba(129,140,248,0.6)',
-                borderColor: '#818cf8', borderWidth: 1, borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
-                y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } }
-            }
-        }
-    });
+Habla directo como endocrinólogo a su paciente. Al final recuerda validar con equipo médico presencial.`;
+try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:prompt}]})});
+const data=await res.json();if(data.content?.[0]?.text)rd.innerHTML=`<div class="result-card"><div class="analysis-content">${data.content[0].text}</div></div>`;
+else if(data.error)rd.innerHTML=`<div class="alert alert-danger">${data.error.message}</div>`}catch(e){rd.innerHTML=`<div class="alert alert-danger">Error: ${e.message}</div>`}btn.disabled=false}
 
-    // Carbs Chart
-    if (chartCarbs) chartCarbs.destroy();
-    chartCarbs = new Chart(document.getElementById('chart-carbs'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'CHO (g)', data: cData,
-                backgroundColor: 'rgba(251,191,36,0.5)',
-                borderColor: '#fbbf24', borderWidth: 1, borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'dd/MM' } }, ticks: { color: tickColor }, grid: { color: gridColor } },
-                y: { beginAtZero: true, ticks: { color: tickColor }, grid: { color: gridColor } }
-            }
-        }
-    });
-
-    // Moments chart
-    const momentGroups = {};
-    logs.forEach(l => {
-        const m = l.momento || 'Otro';
-        if (!momentGroups[m]) momentGroups[m] = [];
-        if (l.glicemia) momentGroups[m].push(l.glicemia);
-    });
-    const momentLabels = Object.keys(momentGroups);
-    const momentAvgs = momentLabels.map(m => momentGroups[m].length ? Math.round(momentGroups[m].reduce((a,b)=>a+b,0)/momentGroups[m].length) : 0);
-    const momentColors = momentLabels.map((_, i) => ['#38bdf8','#34d399','#fbbf24','#f87171','#818cf8','#a78bfa','#fb923c'][i % 7]);
-
-    if (chartMoments) chartMoments.destroy();
-    chartMoments = new Chart(document.getElementById('chart-moments'), {
-        type: 'bar',
-        data: {
-            labels: momentLabels,
-            datasets: [{
-                label: 'Promedio Glicemia',
-                data: momentAvgs,
-                backgroundColor: momentColors.map(c => c + '80'),
-                borderColor: momentColors, borderWidth: 2, borderRadius: 6,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, max: 300, ticks: { color: tickColor }, grid: { color: gridColor } },
-                y: { ticks: { color: tickColor }, grid: { display: false } }
-            }
-        }
-    });
-
-    // TIR Chart
-    if (gValues.length) {
-        const low = gValues.filter(v => v < 70).length;
-        const inRange = gValues.filter(v => v >= 70 && v <= 180).length;
-        const high = gValues.filter(v => v > 180 && v <= 250).length;
-        const vHigh = gValues.filter(v => v > 250).length;
-        const total = gValues.length;
-
-        if (chartTIR) chartTIR.destroy();
-        chartTIR = new Chart(document.getElementById('chart-tir'), {
-            type: 'bar',
-            data: {
-                labels: ['Distribución'],
-                datasets: [
-                    { label: `Hipo <70 (${(low/total*100).toFixed(0)}%)`, data: [low/total*100], backgroundColor: '#f87171' },
-                    { label: `En rango 70-180 (${(inRange/total*100).toFixed(0)}%)`, data: [inRange/total*100], backgroundColor: '#34d399' },
-                    { label: `Alto 180-250 (${(high/total*100).toFixed(0)}%)`, data: [high/total*100], backgroundColor: '#fbbf24' },
-                    { label: `Muy alto >250 (${(vHigh/total*100).toFixed(0)}%)`, data: [vHigh/total*100], backgroundColor: '#ef4444' },
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-                plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 } } } },
-                scales: {
-                    x: { stacked: true, max: 100, ticks: { color: tickColor, callback: v => v+'%' }, grid: { color: gridColor } },
-                    y: { stacked: true, display: false }
-                }
-            }
-        });
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// AI ANALYSIS — Endocrinologist Mode
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runAnalysis() {
-    const apiKey = document.getElementById('analysis-api-key').value.trim();
-    const logs = getLogs();
-    const rd = document.getElementById('analysis-result');
-    const btn = document.getElementById('btn-analysis');
-
-    if (!apiKey) { alert('Ingresa tu API key de Anthropic'); return; }
-    if (logs.length < 5) { alert('Necesitas al menos 5 registros para un análisis significativo. Actualmente tienes ' + logs.length + '.'); return; }
-
-    btn.disabled = true;
-    rd.innerHTML = `<div class="analysis-loading"><div class="spinner"></div><p>Analizando ${logs.length} registros...</p><p style="font-size:12px;margin-top:4px">El endocrinólogo virtual está revisando tus datos</p></div>`;
-
-    // Compute stats
-    const gVals = logs.map(l => l.glicemia).filter(g => g);
-    const avg = gVals.reduce((a,b) => a+b, 0) / gVals.length;
-    const sd = Math.sqrt(gVals.reduce((s,v) => s + Math.pow(v-avg, 2), 0) / gVals.length);
-    const tir = (gVals.filter(v => v >= 70 && v <= 180).length / gVals.length * 100).toFixed(1);
-    const tirLow = (gVals.filter(v => v < 70).length / gVals.length * 100).toFixed(1);
-    const tirHigh = (gVals.filter(v => v > 180).length / gVals.length * 100).toFixed(1);
-    const a1c = ((avg + 46.7) / 28.7).toFixed(1);
-    const totalInsulin = logs.reduce((s, l) => s + (l.insulina || 0), 0);
-    const totalCHO = logs.reduce((s, l) => s + (l.cho || 0), 0);
-
-    // Group by moment
-    const byMoment = {};
-    logs.forEach(l => {
-        const m = l.momento || 'Otro';
-        if (!byMoment[m]) byMoment[m] = { glicemias: [], insulinas: [], chos: [] };
-        if (l.glicemia) byMoment[m].glicemias.push(l.glicemia);
-        if (l.insulina) byMoment[m].insulinas.push(l.insulina);
-        if (l.cho) byMoment[m].chos.push(l.cho);
-    });
-    const momentSummary = Object.entries(byMoment).map(([m, d]) => {
-        const avgG = d.glicemias.length ? Math.round(d.glicemias.reduce((a,b)=>a+b,0)/d.glicemias.length) : 'N/A';
-        const avgI = d.insulinas.length ? (d.insulinas.reduce((a,b)=>a+b,0)/d.insulinas.length).toFixed(1) : 'N/A';
-        const avgC = d.chos.length ? Math.round(d.chos.reduce((a,b)=>a+b,0)/d.chos.length) : 'N/A';
-        return `${m}: promGlicemia=${avgG}mg/dL, promInsulina=${avgI}U, promCHO=${avgC}g (n=${d.glicemias.length})`;
-    }).join('\n');
-
-    // Recent 30 entries detail
-    const recentDetail = logs.slice(0, 30).map(l => {
-        const d = new Date(l.datetime);
-        return `${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})} | ${l.momento||'?'} | Glic:${l.glicemia} | CHO:${l.cho||0}g | Ins:${l.insulina||0}U${l.notas ? ' | Nota:'+l.notas : ''}`;
-    }).join('\n');
-
-    // Settings
-    const ratio = document.getElementById('ratio').value;
-    const sensi = document.getElementById('sensibilidad').value;
-    const objetivo = document.getElementById('objetivo').value;
-    const terapia = document.getElementById('terapia').value;
-
-    const prompt = `Eres un endocrinólogo con 30 años de experiencia especializado en diabetes tipo 1. Un paciente comparte contigo sus registros glicémicos para que los analices a fondo y le des recomendaciones clínicas claras y accionables.
-
-CONFIGURACIÓN ACTUAL DEL PACIENTE:
-- Ratio I:CHO = 1:${ratio}
-- Factor de sensibilidad = ${sensi} mg/dL por unidad
-- Glicemia objetivo = ${objetivo} mg/dL
-- Terapia = ${terapia}
-
-ESTADÍSTICAS GLOBALES (${logs.length} registros):
-- Promedio glicemia: ${Math.round(avg)} mg/dL
-- Desviación estándar: ${Math.round(sd)} mg/dL
-- Coeficiente de variación: ${(sd/avg*100).toFixed(1)}%
-- Tiempo en rango (70-180): ${tir}%
-- Tiempo en hipoglicemia (<70): ${tirLow}%
-- Tiempo en hiperglicemia (>180): ${tirHigh}%
-- HbA1c estimada: ${a1c}%
-- Insulina total del periodo: ${totalInsulin.toFixed(1)}U
-- CHO totales del periodo: ${totalCHO}g
-
-PROMEDIOS POR MOMENTO DEL DÍA:
-${momentSummary}
-
-REGISTROS DETALLADOS (últimos 30):
-${recentDetail}
-
-INSTRUCCIONES:
-Responde en español con formato HTML (usa <h3> para secciones y <p> para párrafos, <strong> para énfasis). NO uses markdown. Estructura tu análisis así:
-
-1. RESUMEN EJECUTIVO: Evaluación general del control glucémico en 2-3 oraciones directas.
-
-2. ANÁLISIS DE PATRONES: Identifica patrones específicos por momento del día. ¿Hay hiperglicemias recurrentes post-prandiales? ¿Hipoglicemias nocturnas? ¿Variabilidad excesiva? Sé específico con los datos.
-
-3. EVALUACIÓN DE RATIOS: Basándote en los datos, evalúa si el ratio I:CHO y el factor de sensibilidad parecen adecuados. Si los post-prandiales están consistentemente altos en cierto momento, sugiere ajustes concretos con números.
-
-4. RECOMENDACIONES CLÍNICAS: Da entre 3 y 6 recomendaciones CONCRETAS, priorizadas, con números específicos. Por ejemplo: "Considera ajustar el ratio del almuerzo de 1:${ratio} a 1:X" o "Tu factor de sensibilidad podría necesitar cambiar a X".
-
-5. ALERTAS DE SEGURIDAD: Si hay hipoglicemias frecuentes, patrones peligrosos, o variabilidad extrema, destácalos con urgencia.
-
-6. PLAN DE ACCIÓN: 3 acciones concretas que el paciente puede implementar esta semana.
-
-Recuerda: habla como un endocrinólogo experimentado hablándole directamente a su paciente con confianza y claridad. Sé directo, específico y útil. Al final, recuerda que estas son recomendaciones orientativas y que debe validarlas con su equipo médico presencial.`;
-
-    try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] })
-        });
-        const data = await res.json();
-        if (data.content?.[0]?.text) {
-            rd.innerHTML = `<div class="result-card"><div class="analysis-content">${data.content[0].text}</div></div>`;
-        } else if (data.error) {
-            rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error: ${data.error.message}</div>`;
-        }
-    } catch(e) {
-        rd.innerHTML = `<div class="warning-box danger" style="margin-top:16px">Error de conexión: ${e.message}</div>`;
-    }
-    btn.disabled = false;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SETTINGS PERSISTENCE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function saveSettings() {
-    try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-            ratio: document.getElementById('ratio').value,
-            sensibilidad: document.getElementById('sensibilidad').value,
-            objetivo: document.getElementById('objetivo').value,
-            terapia: document.getElementById('terapia').value,
-            mediaUnidad: document.getElementById('media-unidad').checked,
-        }));
-    } catch(e) {}
-}
-
-function loadSettings() {
-    try {
-        const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-        if (s) {
-            document.getElementById('ratio').value = s.ratio || 10;
-            document.getElementById('sensibilidad').value = s.sensibilidad || 40;
-            document.getElementById('objetivo').value = s.objetivo || 110;
-            document.getElementById('terapia').value = s.terapia || 'MDI';
-            document.getElementById('media-unidad').checked = s.mediaUnidad || false;
-            toggleIOB();
-        }
-    } catch(e) {}
-}
-
-document.querySelectorAll('#ratio,#sensibilidad,#objetivo,#terapia,#media-unidad').forEach(el => el.addEventListener('change', saveSettings));
+// ═════════════════════════════════════════════════════════
+// SETTINGS
+// ═════════════════════════════════════════════════════════
+function saveSettings(){try{localStorage.setItem(SET,JSON.stringify({ratio:document.getElementById('ratio').value,sensibilidad:document.getElementById('sensibilidad').value,objetivo:document.getElementById('objetivo').value,terapia:document.getElementById('terapia').value}))}catch(e){}}
+function loadSettings(){try{const s=JSON.parse(localStorage.getItem(SET));if(s){document.getElementById('ratio').value=s.ratio||10;document.getElementById('sensibilidad').value=s.sensibilidad||40;document.getElementById('objetivo').value=s.objetivo||110;document.getElementById('terapia').value=s.terapia||'MDI';toggleIOB()}}catch(e){}}
+document.querySelectorAll('#ratio,#sensibilidad,#objetivo,#terapia').forEach(el=>el.addEventListener('change',saveSettings));
 loadSettings();
-setDefaultDatetime();
 </script>
-
 </body>
 </html>
