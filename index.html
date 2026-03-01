@@ -100,9 +100,17 @@ select{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px}
 .fit{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:var(--rs);cursor:pointer;transition:background .15s}
 .fit:hover{background:var(--teal-bg)}
 .fn{font-size:12px;font-weight:500;text-transform:capitalize}.fp{font-size:10px;color:var(--muted)}.fc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal);font-weight:600}
-.sf{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--subtle);border-radius:var(--rs);margin-bottom:4px}
-.sf .sn2{font-size:12px;font-weight:500;text-transform:capitalize}.sf .sc{font-family:'JetBrains Mono',monospace;color:var(--teal);font-weight:600;font-size:12px}
+.sf{display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--subtle);border-radius:var(--rs);margin-bottom:6px}
+.sf .sn2{font-size:12px;font-weight:600;text-transform:capitalize}.sf .sc{font-family:'JetBrains Mono',monospace;color:var(--teal);font-weight:600;font-size:13px}
+.sf .sf-ref{font-size:10px;color:var(--muted);margin-top:1px}
 .rf{background:0;border:0;color:var(--red);cursor:pointer;font-size:16px;padding:2px 4px;opacity:.5}.rf:hover{opacity:1}
+.qty-ctl{display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
+.qty-btn{width:30px;height:30px;border:0;background:var(--subtle);color:var(--teal);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;transition:background .15s}
+.qty-btn:hover{background:var(--teal-l)}
+.qty-btn:active{background:var(--teal-m)}
+.qty-val{width:36px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text);border:0;background:#fff;padding:0}
+.qty-val::-webkit-inner-spin-button{-webkit-appearance:none}
+.fit-ref{font-size:10px;color:var(--teal-d);background:var(--teal-l);padding:1px 6px;border-radius:4px;display:inline-block;margin-top:2px}
 .tb{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--teal-bg);border:1.5px solid rgba(26,154,170,.2);border-radius:var(--rs);margin-top:10px}
 .tb .tl{font-weight:600;font-size:13px;color:var(--teal-d)}.tb .tv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--teal)}
 .lw{overflow-x:auto;margin-top:10px}
@@ -187,7 +195,7 @@ table.lt tr:hover td{background:var(--teal-bg)}
 <div class="cd"><div class="ch"><div class="ci o"><svg><use href="#i-search"/></svg></div><div><div class="ct">Buscar alimentos</div></div></div>
 <div class="sw"><svg><use href="#i-search"/></svg><input type="text" id="fs" placeholder="Ej: arroz, plátano, pizza..." oninput="sf(this.value)"></div>
 <div class="fr" id="fres"></div></div>
-<div class="cd"><div class="ch"><div class="ci g"><svg><use href="#i-check"/></svg></div><div><div class="ct">Mi plato</div></div></div>
+<div class="cd"><div class="ch"><div class="ci g"><svg><use href="#i-check"/></svg></div><div><div class="ct">Mi plato</div><div class="cs">Ajusta cantidades con + y −</div></div></div>
 <div id="sfoods"><p style="color:var(--muted);font-size:12px;text-align:center;padding:14px">Selecciona alimentos arriba</p></div>
 <div class="tb" id="tbar" style="display:none"><span class="tl">Total CHO</span><span class="tv" id="tcho">0g</span></div>
 <button class="btn bo" onclick="useCHO()" style="display:none;margin-top:10px" id="buc"><svg><use href="#i-syr"/></svg>Calcular bolus</button></div>
@@ -318,17 +326,117 @@ document.getElementById('res').innerHTML=`<div class="rc"><div class="bd2"><div 
 <div class="al al-s">✓ Registro guardado · ${mom}</div>${w.map(x=>`<div class="al al-${x.t}">${x.m}</div>`).join('')}</div>`;
 document.getElementById('res').scrollIntoView({behavior:'smooth'})}
 
-// FOOD DB
-const FD={"arroz blanco":{c:28,p:180},"arroz integral":{c:23,p:180},"pasta":{c:25,p:200},"pan blanco":{c:49,p:60},"pan integral":{c:41,p:60},"tortilla maíz":{c:44,p:30},"avena":{c:12,p:240},"quinoa":{c:21,p:185},"cereal":{c:75,p:40},"manzana":{c:14,p:180},"plátano":{c:23,p:120},"naranja":{c:12,p:150},"uvas":{c:17,p:150},"fresa":{c:8,p:150},"sandía":{c:8,p:280},"mango":{c:15,p:200},"piña":{c:13,p:165},"durazno":{c:10,p:150},"pera":{c:15,p:180},"kiwi":{c:15,p:75},"ciruela":{c:11,p:66},"papa cocida":{c:17,p:200},"papa frita":{c:36,p:150},"camote":{c:20,p:150},"frijoles":{c:22,p:170},"lentejas":{c:20,p:200},"garbanzos":{c:27,p:165},"leche":{c:5,p:240},"yogur natural":{c:5,p:200},"yogur con fruta":{c:15,p:200},"helado":{c:24,p:100},"jugo naranja":{c:10,p:250},"bebida/refresco":{c:11,p:350},"pizza":{c:33,p:120},"hamburguesa":{c:20,p:200},"sushi 6pz":{c:30,p:180},"empanada":{c:30,p:120},"tacos":{c:22,p:200},"galletas":{c:65,p:30},"chocolate":{c:56,p:40},"pollo":{c:0,p:150},"carne":{c:0,p:150},"pescado":{c:0,p:150},"huevo":{c:1,p:50},"ensalada":{c:2,p:150},"tomate":{c:4,p:120},"zanahoria":{c:10,p:80},"brócoli":{c:7,p:150},"maíz":{c:19,p:150},"completo":{c:35,p:160},"sopaipilla":{c:30,p:100}};
-function sf(q){const c=document.getElementById('fres');if(!q||q.length<2){c.innerHTML='';return}const ql=q.toLowerCase();c.innerHTML=Object.entries(FD).filter(([n])=>n.includes(ql)).map(([n,d])=>{const ch=(d.c*d.p/100).toFixed(1);return`<div class="fit" onclick="aF('${n}',${ch})"><div><div class="fn">${n}</div><div class="fp">${d.p}g · ${d.c}g/100g</div></div><div class="fc">${ch}g</div></div>`}).join('')||'<p style="color:var(--muted);padding:12px;text-align:center;font-size:12px">No encontrado</p>'}
+// FOOD DB — c:CHO g/100g, p:porción default en g, ref:medida casera, rq:cantidad de ref en 1 porción
+const FD={
+"arroz blanco":{c:28,p:180,ref:"taza cocida",rq:1},
+"arroz integral":{c:23,p:180,ref:"taza cocida",rq:1},
+"pasta":{c:25,p:200,ref:"taza cocida",rq:1},
+"fideos":{c:25,p:200,ref:"taza cocida",rq:1},
+"pan blanco":{c:49,p:60,ref:"marraqueta",rq:1},
+"pan integral":{c:41,p:60,ref:"rebanada",rq:2},
+"pan de molde":{c:47,p:56,ref:"rebanada",rq:2},
+"tortilla maíz":{c:44,p:30,ref:"unidad",rq:1},
+"tortilla harina":{c:50,p:40,ref:"unidad",rq:1},
+"avena":{c:12,p:240,ref:"taza preparada",rq:1},
+"quinoa":{c:21,p:185,ref:"taza cocida",rq:1},
+"cereal":{c:75,p:40,ref:"taza",rq:1},
+"granola":{c:60,p:45,ref:"½ taza",rq:1},
+"manzana":{c:14,p:180,ref:"unidad mediana",rq:1},
+"plátano":{c:23,p:120,ref:"unidad mediana",rq:1},
+"naranja":{c:12,p:150,ref:"unidad mediana",rq:1},
+"mandarina":{c:13,p:80,ref:"unidad",rq:1},
+"uvas":{c:17,p:150,ref:"grano",rq:25},
+"fresa":{c:8,p:150,ref:"unidad mediana",rq:10},
+"frambuesa":{c:12,p:125,ref:"taza",rq:1},
+"arándanos":{c:14,p:150,ref:"taza",rq:1},
+"sandía":{c:8,p:280,ref:"tajada mediana",rq:1},
+"melón":{c:8,p:200,ref:"tajada mediana",rq:1},
+"mango":{c:15,p:200,ref:"unidad mediana",rq:1},
+"piña":{c:13,p:165,ref:"rodaja gruesa",rq:2},
+"durazno":{c:10,p:150,ref:"unidad mediana",rq:1},
+"pera":{c:15,p:180,ref:"unidad mediana",rq:1},
+"kiwi":{c:15,p:75,ref:"unidad",rq:1},
+"ciruela":{c:11,p:66,ref:"unidad",rq:1},
+"cereza":{c:16,p:140,ref:"unidad",rq:20},
+"higo":{c:19,p:50,ref:"unidad",rq:1},
+"damasco":{c:11,p:55,ref:"unidad",rq:1},
+"papa cocida":{c:17,p:200,ref:"unidad mediana",rq:1},
+"papa frita":{c:36,p:150,ref:"porción mediana",rq:1},
+"puré de papa":{c:16,p:200,ref:"taza",rq:1},
+"camote":{c:20,p:150,ref:"unidad mediana",rq:1},
+"choclo/elote":{c:19,p:150,ref:"unidad",rq:1},
+"frijoles/porotos":{c:22,p:170,ref:"taza cocida",rq:1},
+"lentejas":{c:20,p:200,ref:"taza cocida",rq:1},
+"garbanzos":{c:27,p:165,ref:"taza cocida",rq:1},
+"arvejas":{c:14,p:160,ref:"taza cocida",rq:1},
+"leche entera":{c:5,p:240,ref:"taza (240ml)",rq:1},
+"leche descremada":{c:5,p:240,ref:"taza (240ml)",rq:1},
+"leche vegetal":{c:3,p:240,ref:"taza (240ml)",rq:1},
+"yogur natural":{c:5,p:200,ref:"pote (200ml)",rq:1},
+"yogur con fruta":{c:15,p:200,ref:"pote (200ml)",rq:1},
+"helado":{c:24,p:100,ref:"bola",rq:2},
+"jugo naranja":{c:10,p:250,ref:"vaso (250ml)",rq:1},
+"bebida/refresco":{c:11,p:350,ref:"lata (350ml)",rq:1},
+"cerveza":{c:3,p:350,ref:"lata (350ml)",rq:1},
+"pizza":{c:33,p:120,ref:"trozo",rq:1},
+"hamburguesa":{c:20,p:200,ref:"unidad con pan",rq:1},
+"sushi":{c:10,p:30,ref:"pieza",rq:6},
+"empanada":{c:30,p:120,ref:"unidad",rq:1},
+"tacos":{c:22,p:200,ref:"unidad",rq:2},
+"galletas":{c:65,p:30,ref:"unidad",rq:3},
+"chocolate":{c:56,p:40,ref:"barra chica",rq:1},
+"brownie":{c:50,p:60,ref:"trozo",rq:1},
+"torta/pastel":{c:45,p:120,ref:"trozo",rq:1},
+"pollo":{c:0,p:150,ref:"presa mediana",rq:1},
+"carne":{c:0,p:150,ref:"trozo palma mano",rq:1},
+"pescado":{c:0,p:150,ref:"filete mediano",rq:1},
+"huevo":{c:1,p:50,ref:"unidad",rq:1},
+"ensalada":{c:2,p:150,ref:"plato",rq:1},
+"tomate":{c:4,p:120,ref:"unidad mediana",rq:1},
+"zanahoria":{c:10,p:80,ref:"unidad mediana",rq:1},
+"brócoli":{c:7,p:150,ref:"taza picado",rq:1},
+"palta/aguacate":{c:9,p:80,ref:"½ unidad",rq:1},
+"choclo desgranado":{c:19,p:150,ref:"taza",rq:1},
+"completo":{c:35,p:160,ref:"unidad",rq:1},
+"sopaipilla":{c:30,p:100,ref:"unidad",rq:1},
+"hallulla":{c:52,p:80,ref:"unidad",rq:1},
+"manjar":{c:56,p:30,ref:"cucharada",rq:2},
+"miel":{c:82,p:21,ref:"cucharada",rq:1},
+"azúcar":{c:100,p:12,ref:"cucharadita",rq:2},
+"mermelada":{c:60,p:20,ref:"cucharada",rq:1},
+"almendras":{c:22,p:30,ref:"unidad",rq:20},
+"maní":{c:16,p:30,ref:"puñado",rq:1}
+};
+
+function sf(q){const c=document.getElementById('fres');if(!q||q.length<2){c.innerHTML='';return}const ql=q.toLowerCase();
+c.innerHTML=Object.entries(FD).filter(([n])=>n.includes(ql)).map(([n,d])=>{
+const ch=(d.c*d.p/100).toFixed(1);
+const refTxt=d.rq===1?`≈ 1 ${d.ref}`:`≈ ${d.rq} ${d.ref}s`;
+return`<div class="fit" onclick="aF('${n}')"><div><div class="fn">${n}</div><div class="fp">${d.p}g · ${d.c}g CHO/100g</div><div class="fit-ref">📏 ${refTxt} = ${ch}g CHO</div></div><div class="fc">${ch}g</div></div>`
+}).join('')||'<p style="color:var(--muted);padding:12px;text-align:center;font-size:12px">No encontrado</p>'}
+
 let sF=[];
-function aF(n,c){sF.push({n,c:+c});rSF()}
+function aF(n){const d=FD[n];if(!d)return;sF.push({n,key:n,qty:d.rq,refUnit:d.ref,pPerRef:d.p/d.rq,choP100:d.c});rSF()}
 function rmF(i){sF.splice(i,1);rSF()}
+function adjQ(i,delta){sF[i].qty=Math.max(0.5,+(sF[i].qty+delta).toFixed(1));rSF()}
+function setQ(i,val){const v=parseFloat(val);if(!isNaN(v)&&v>=0)sF[i].qty=v;rSF()}
+function getFCho(f){return +(f.choP100*f.pPerRef*f.qty/100).toFixed(1)}
 function rSF(){const c=document.getElementById('sfoods'),tb=document.getElementById('tbar'),b=document.getElementById('buc');
 if(!sF.length){c.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:14px">Selecciona alimentos arriba</p>';tb.style.display='none';b.style.display='none';return}
-c.innerHTML=sF.map((f,i)=>`<div class="sf"><div style="display:flex;align-items:center;gap:8px"><span class="sn2">${f.n}</span><span class="sc">${f.c}g</span></div><button class="rf" onclick="rmF(${i})">✕</button></div>`).join('');
-tb.style.display='flex';document.getElementById('tcho').textContent=sF.reduce((s,f)=>s+f.c,0).toFixed(1)+'g';b.style.display='flex'}
-function useCHO(){document.getElementById('x-cho').value=Math.round(sF.reduce((s,f)=>s+f.c,0));go('calc');document.getElementById('x-gl').focus()}
+c.innerHTML=sF.map((f,i)=>{
+const cho=getFCho(f);
+const grams=Math.round(f.pPerRef*f.qty);
+const unitLabel=f.qty===1?f.refUnit:(f.refUnit+(f.refUnit.match(/^(unidad|taza|presa|tajada|rodaja|porción|rebanada|bola|trozo|lata|pote|barra|pieza|cucharada|cucharadita|plato|puñado)$/)?'es':f.refUnit.endsWith('s')?'':'s'));
+return`<div class="sf" style="flex-wrap:wrap;gap:6px">
+<div style="flex:1;min-width:0"><div class="sn2">${f.n}</div><div class="sf-ref">${grams}g · ${f.qty} ${f.qty===1?f.refUnit:unitLabel}</div></div>
+<div style="display:flex;align-items:center;gap:8px">
+<div class="qty-ctl"><button class="qty-btn" onclick="adjQ(${i},-${f.qty>=5?1:f.refUnit==='grano'||f.refUnit==='pieza'?1:0.5})">−</button><input class="qty-val" type="number" value="${f.qty}" min="0.5" step="${f.refUnit==='grano'||f.refUnit==='pieza'?1:0.5}" onchange="setQ(${i},this.value)"><button class="qty-btn" onclick="adjQ(${i},${f.qty>=5?1:f.refUnit==='grano'||f.refUnit==='pieza'?1:0.5})">+</button></div>
+<span class="sc">${cho}g</span>
+<button class="rf" onclick="rmF(${i})">✕</button>
+</div></div>`}).join('');
+const total=sF.reduce((s,f)=>s+getFCho(f),0);
+tb.style.display='flex';document.getElementById('tcho').textContent=total.toFixed(1)+'g';b.style.display='flex'}
+function useCHO(){document.getElementById('x-cho').value=Math.round(sF.reduce((s,f)=>s+getFCho(f),0));go('calc');document.getElementById('x-gl').focus()}
 
 // PHOTO - guided
 let sImg=null;
