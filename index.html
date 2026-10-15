@@ -264,9 +264,9 @@ table.lt tr:hover td{background:var(--accent-bg)}
 <div class="cd"><div class="ch"><div class="ci a"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div><div><div class="ct">Estimar por foto</div><div class="cs">IA analiza tu comida y estima macros</div></div></div>
 <div class="fi" style="margin-bottom:12px"><label>¿Qué vas a comer? <span class="u">(mejora la precisión)</span></label><input type="text" id="ph-food" placeholder="Ej: 2 duraznos, arroz con pollo..." style="font-family:'Inter',sans-serif;font-size:14px"></div>
 <div class="uz" id="uz" onclick="document.getElementById('fi').click()">
-<input type="file" id="fi" accept="image/*" capture="environment" onchange="hImg(this)">
+<input type="file" id="fi" accept="image/*" onchange="hImg(this)">
 <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-<h3>Toca para tomar foto</h3><p>Sin moneda ni referencia — solo tu comida</p>
+<h3>Tomar foto o elegir de galería</h3><p>Sin moneda ni referencia — solo tu comida</p>
 </div>
 <div style="margin-top:14px"><button class="btn bp" onclick="aImg()" id="ba" disabled><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Analizar comida</button></div>
 <div id="phres"></div></div>
@@ -274,7 +274,7 @@ table.lt tr:hover td{background:var(--accent-bg)}
 <!-- Pump/CGM photo -->
 <div class="cd"><div class="ch"><div class="ci p"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg></div><div><div class="ct">Leer mi bomba / sensor</div><div class="cs">Pantallazo de tu app (LibreLink, Dexcom, xDrip, CareLink...)</div></div></div>
 <div class="uz" id="uz2" onclick="document.getElementById('fi2').click()">
-<input type="file" id="fi2" accept="image/*" capture="environment" onchange="hImg2(this)">
+<input type="file" id="fi2" accept="image/*" onchange="hImg2(this)">
 <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg>
 <h3>Pantallazo de la app o foto de la bomba</h3><p>Lee insulina activa, último bolus y tendencia</p>
 </div>
@@ -603,7 +603,7 @@ const d=getTodayBal();d.meals.push(meal);d.goal=gCfg().calgoal||2000;setTodayBal
 
 // PHOTO ANALYSIS
 let sImg=null;
-function hImg(inp){const f=inp.files[0];if(!f)return;sImg=f;const r=new FileReader();r.onload=e=>{const z=document.getElementById('uz');z.classList.add('hi');z.innerHTML=`<img src="${e.target.result}"><input type="file" id="fi" accept="image/*" capture="environment" onchange="hImg(this)" style="display:none">`;document.getElementById('ba').disabled=false};r.readAsDataURL(f)}
+function hImg(inp){const f=inp.files[0];if(!f)return;sImg=f;const r=new FileReader();r.onload=e=>{const z=document.getElementById('uz');z.classList.add('hi');z.innerHTML=`<img src="${e.target.result}"><input type="file" id="fi" accept="image/*" onchange="hImg(this)" style="display:none">`;document.getElementById('ba').disabled=false};r.readAsDataURL(f)}
 
 async function aImg(){if(!sImg)return;const c=gCfg(),food=document.getElementById('ph-food').value.trim(),btn=document.getElementById('ba'),rd=document.getElementById('phres');
 if(!c.key){rd.innerHTML='<div class="al al-w" style="margin-top:12px">Configura tu API Key en ⚙️ Config</div>';return}
@@ -626,15 +626,15 @@ rd.innerHTML=`<div class="rc" style="margin-top:16px"><div class="bd2"><div clas
 ${result.alimentos.map(a=>`<div class="sf" style="flex-wrap:wrap"><div style="flex:1"><div class="sn2">${a.nombre}</div><div class="sf-ref">${a.porcion_estimada_g}g · ${a.calorias}kcal · P:${a.proteinas}g G:${a.grasas}g</div></div><div style="text-align:right"><span class="sc">${a.cho_medio}g</span><div style="font-size:9px;color:var(--text3)">${a.cho_bajo}-${a.cho_alto}g</div></div></div>`).join('')}
 ${result.notas?`<div class="al al-i" style="margin-top:10px">${result.notas}</div>`:''}
 <div class="br" style="margin-top:14px"><button class="btn bo" onclick="usePhotoBolus(${t.cho_medio},${t.calorias},${t.proteinas},${t.grasas})"><svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l-3-3m3 3l3-3M5 12h14M7 17l5-5 5 5"/></svg>Bolus + guardar</button><button class="btn bs" onclick="addPhotoToBalance(${t.calorias},${t.cho_medio},${t.proteinas},${t.grasas})"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 20V10m0 0l-3 3m3-3l3 3"/><path d="M4 14a8 8 0 0116 0"/></svg>Balance</button></div></div>`}
-else if(data.error)rd.innerHTML=`<div class="al al-d" style="margin-top:12px">${data.error.message}</div>`}
-catch(e){rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error: ${e.message}</div>`}
+else if(data.error)rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error API: ${data.error.message||'Revisa tu API Key en ⚙️ Config'}</div>`}
+catch(e){rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error de conexión: ${e.message}</div>`}
 btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Analizar comida'}
 
 function addPhotoToBalance(cal,cho,pro,fat){const meal={desc:'Foto',time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),cal,cho,pro,fat,items:'Estimación IA'};const d=getTodayBal();d.meals.push(meal);d.goal=gCfg().calgoal||2000;setTodayBal(d);go('balance')}
 
 // PUMP/CGM PHOTO
 let sImg2=null;
-function hImg2(inp){const f=inp.files[0];if(!f)return;sImg2=f;const r=new FileReader();r.onload=e=>{const z=document.getElementById('uz2');z.classList.add('hi');z.innerHTML=`<img src="${e.target.result}"><input type="file" id="fi2" accept="image/*" capture="environment" onchange="hImg2(this)" style="display:none">`;document.getElementById('ba3').disabled=false};r.readAsDataURL(f)}
+function hImg2(inp){const f=inp.files[0];if(!f)return;sImg2=f;const r=new FileReader();r.onload=e=>{const z=document.getElementById('uz2');z.classList.add('hi');z.innerHTML=`<img src="${e.target.result}"><input type="file" id="fi2" accept="image/*" onchange="hImg2(this)" style="display:none">`;document.getElementById('ba3').disabled=false};r.readAsDataURL(f)}
 
 async function aPump(){if(!sImg2)return;const c=gCfg(),btn=document.getElementById('ba3'),rd=document.getElementById('pump-res');
 if(!c.key){rd.innerHTML='<div class="al al-w" style="margin-top:12px">Configura tu API Key en ⚙️ Config</div>';return}
@@ -670,8 +670,8 @@ rd.innerHTML=`<div class="rc" style="margin-top:16px"><div class="bd2"><div clas
 ${p.alertas?.length?p.alertas.map(a=>`<div class="al al-w" style="margin-top:8px">⚠️ ${a}</div>`).join(''):''}
 ${p.recomendacion?`<div class="al al-i" style="margin-top:8px">${p.recomendacion}</div>`:''}
 <div class="br" style="margin-top:14px"><button class="btn bo" onclick="document.getElementById('x-gl').value=${p.glicemia};${p.iob?`document.getElementById('c-iob').value=${p.iob};saveCfg();`:''}go('calc')"><svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l-3-3m3 3l3-3M5 12h14M7 17l5-5 5 5"/></svg>Usar para bolus</button><button class="btn bs" id="pump-save-btn" onclick="savePumpLog(${p.glicemia},${p.iob||0},'${p.tendencia||''}','${(p.dispositivo||'bomba').replace(/'/g,'')}')"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Guardar lectura</button></div>${wizActive?`<button class="btn bp" onclick="go('photo');document.getElementById('uz').scrollIntoView({behavior:'smooth'})" style="margin-top:8px">Siguiente → Foto comida</button>`:''}</div>`}
-else if(data.error)rd.innerHTML=`<div class="al al-d" style="margin-top:12px">${data.error.message}</div>`}
-catch(e){rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error: ${e.message}</div>`}
+else if(data.error)rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error API: ${data.error.message||'Revisa tu API Key en ⚙️ Config'}</div>`}
+catch(e){rd.innerHTML=`<div class="al al-d" style="margin-top:12px">Error de conexión: ${e.message}</div>`}
 btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg>Leer bomba / sensor'}
 
 // BALANCE
