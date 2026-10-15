@@ -623,7 +623,7 @@ Para CADA alimento da 3 estimaciones de CHO: baja, media, alta.
 
 Responde SOLO JSON sin markdown:
 {"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_bajo":0,"cho_medio":0,"cho_alto":0,"calorias":0,"proteinas":0,"grasas":0}],"totales":{"cho_bajo":0,"cho_medio":0,"cho_alto":0,"calorias":0,"proteinas":0,"grasas":0},"confianza":"alta|media|baja","notas":"..."}`}]}]})});
-const data=await res.json();const _tb=data.content?.find(b=>b.type==='text');if(_tb){let raw=_tb.text.trim();raw=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');const result=JSON.parse(raw);
+const data=await res.json();const _tb=data.content?.find(b=>b.type==='text');if(_tb){let raw=_tb.text.trim();raw=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');const jm0=raw.match(/\{[\s\S]*\}/);if(!jm0)throw new Error('No se encontró JSON en la respuesta');const result=JSON.parse(jm0[0]);
 const t=result.totales;const confClass='conf-'+(result.confianza||'media');
 rd.innerHTML=`<div class="rc" style="margin-top:16px"><div class="bd2"><div class="bl">CHO estimados</div><div style="display:flex;align-items:baseline;justify-content:center;gap:10px"><span style="font-size:15px;color:var(--text3)">${t.cho_bajo}</span><div class="bv">${t.cho_medio}<span class="bu"> g</span></div><span style="font-size:15px;color:var(--text3)">${t.cho_alto}</span></div><div style="color:var(--text3);font-size:10px;margin-top:4px">bajo · <strong>medio</strong> · alto</div><div style="margin-top:8px"><span class="conf ${confClass}">Confianza: ${result.confianza}</span></div></div>
 <div class="macro-row" style="margin-top:0;margin-bottom:16px"><div class="macro-item cal"><div class="ml2">Kcal</div><div class="mv">${t.calorias}</div></div><div class="macro-item cho"><div class="ml2">CHO</div><div class="mv">${t.cho_medio}</div></div><div class="macro-item pro"><div class="ml2">Prot</div><div class="mv">${t.proteinas}</div></div><div class="macro-item fat"><div class="ml2">Grasa</div><div class="mv">${t.grasas}</div></div></div>
@@ -663,7 +663,7 @@ Extrae toda la información visible:
 
 Responde SOLO JSON sin markdown:
 {"glicemia":0,"tendencia":"subiendo|estable|bajando_lento|bajando_rapido|subiendo_rapido","iob":0,"ultimo_bolus":{"hora":"","unidades":0},"basal_actual":0,"alertas":[],"dispositivo":"...","confianza":"alta|media|baja","recomendacion":"..."}`}]}]})});
-const data=await res.json();const _tb2=data.content?.find(b=>b.type==='text');if(_tb2){let raw=_tb2.text.trim();raw=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');const p=JSON.parse(raw);
+const data=await res.json();const _tb2=data.content?.find(b=>b.type==='text');if(_tb2){let raw=_tb2.text.trim();raw=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');const jm=raw.match(/\{[\s\S]*\}/);if(!jm)throw new Error('No se encontró JSON en la respuesta');const p=JSON.parse(jm[0]);
 const trendIcon={'subiendo':'↗️','estable':'→','bajando_lento':'↘️','bajando_rapido':'⬇️','subiendo_rapido':'⬆️'};
 const trendColor={'subiendo':'var(--orange)','estable':'var(--green)','bajando_lento':'var(--accent)','bajando_rapido':'var(--red)','subiendo_rapido':'var(--red)'};
 const gColor=p.glicemia<70?'var(--red)':p.glicemia<=180?'var(--green)':p.glicemia<=250?'var(--orange)':'var(--red)';
