@@ -357,6 +357,11 @@ table.lt tr:hover td{background:var(--accent-bg)}
 <div class="fi"><label>Meta kcal/día</label><input type="number" id="c-calgoal" placeholder="2000" min="800" max="5000" step="50"></div>
 <div class="fi fw"><label>API Key Anthropic</label><input type="text" id="c-key" placeholder="sk-ant-..." autocomplete="off" style="font-size:12px">
 <span style="font-size:10px;color:var(--text3);margin-top:3px">Solo en tu dispositivo · necesaria para foto y análisis</span></div>
+<div class="fi"><label>Modelo IA</label><select id="c-model" style="font-size:13px;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+<option value="claude-haiku-3-5-20241022">Haiku 3.5 (rápido y económico)</option>
+<option value="claude-3-5-sonnet-20241022">Sonnet 3.5 (mejor calidad)</option>
+<option value="claude-sonnet-4-20250514">Sonnet 4 (premium)</option>
+</select></div>
 </div></div>
 <div class="cd" style="text-align:center"><p style="font-size:12px;color:var(--text3);line-height:1.6"><strong style="color:var(--text)">Bolus</strong> v1.0 · Tu asistente de insulina<br>Creado por un diabético para diabéticos<br>Código abierto · MIT</p></div>
 </div>
@@ -447,7 +452,7 @@ function sm(el){el.closest('.mt').querySelectorAll('.mg').forEach(t=>t.classList
 function gm(id){return document.getElementById(id)?.querySelector('.mg.on')?.textContent.trim()||'Otro'}
 function shH(id){document.getElementById('m-'+id).classList.add('sh')}
 function clH(id){document.getElementById('m-'+id).classList.remove('sh')}
-function gCfg(){return{ratio:+(document.getElementById('c-ratio').value)||10,sensi:+(document.getElementById('c-sensi').value)||40,obj:+(document.getElementById('c-obj').value)||110,ter:document.getElementById('c-ter').value,iob:+(document.getElementById('c-iob').value)||0,key:document.getElementById('c-key').value.trim(),peso:+(document.getElementById('c-peso').value)||0,calgoal:+(document.getElementById('c-calgoal').value)||2000}}
+function gCfg(){return{ratio:+(document.getElementById('c-ratio').value)||10,sensi:+(document.getElementById('c-sensi').value)||40,obj:+(document.getElementById('c-obj').value)||110,ter:document.getElementById('c-ter').value,iob:+(document.getElementById('c-iob').value)||0,key:document.getElementById('c-key').value.trim(),peso:+(document.getElementById('c-peso').value)||0,calgoal:+(document.getElementById('c-calgoal').value)||2000,model:document.getElementById('c-model').value||'claude-haiku-3-5-20241022'}}
 
 // BOLUS CALC
 function calc(){const c=gCfg(),g=+document.getElementById('x-gl').value,cho=+document.getElementById('x-cho').value,mom=gm('mt-calc');
@@ -611,7 +616,7 @@ btn.disabled=true;btn.textContent='Analizando...';
 try{const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(sImg)});
 const foodCtx=food?`\nEl usuario indica que va a comer: "${food}". Usa como guía principal.`:'';
 const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg.type||'image/jpeg',data:b64}},{type:'text',text:`Eres nutricionista experto en conteo de carbohidratos y macronutrientes para diabetes tipo 1 y control de peso.${foodCtx}
+body:JSON.stringify({model:c.model,max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg.type||'image/jpeg',data:b64}},{type:'text',text:`Eres nutricionista experto en conteo de carbohidratos y macronutrientes para diabetes tipo 1 y control de peso.${foodCtx}
 
 Analiza la imagen y estima porciones y macros. Para porciones usa: plato estándar (22-26cm), cubiertos, proporciones relativas, conocimiento de porciones típicas.
 
@@ -641,7 +646,7 @@ if(!c.key){rd.innerHTML='<div class="al al-w" style="margin-top:12px">Configura 
 btn.disabled=true;btn.textContent='Leyendo...';
 try{const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(sImg2)});
 const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg2.type||'image/jpeg',data:b64}},{type:'text',text:`Eres experto en bombas de insulina, sensores CGM y sus apps móviles (Medtronic, Omnipod, Tandem, Dexcom, FreeStyle Libre/LibreLink, xDrip+, Guardian, CareLink, etc).
+body:JSON.stringify({model:c.model,max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg2.type||'image/jpeg',data:b64}},{type:'text',text:`Eres experto en bombas de insulina, sensores CGM y sus apps móviles (Medtronic, Omnipod, Tandem, Dexcom, FreeStyle Libre/LibreLink, xDrip+, Guardian, CareLink, etc).
 
 Analiza esta imagen. Puede ser:
 - Pantalla/foto directa de una bomba de insulina
@@ -743,7 +748,7 @@ const byM={};logs.forEach(l=>{const m=l.momento||'Otro';if(!byM[m])byM[m]={g:[],
 const mS=Object.entries(byM).map(([m,d])=>`${m}: glic=${d.g.length?Math.round(d.g.reduce((a,b)=>a+b,0)/d.g.length):'?'}, ins=${d.i.length?(d.i.reduce((a,b)=>a+b,0)/d.i.length).toFixed(1):'?'}, cho=${d.c.length?Math.round(d.c.reduce((a,b)=>a+b,0)/d.c.length):'?'} (n=${d.g.length})`).join('\n');
 const det=logs.slice(0,30).map(l=>{const d=new Date(l.datetime);return`${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}|${l.momento||'?'}|G:${l.glicemia}|CHO:${l.cho||0}|Ins:${l.insulina||0}|Kcal:${l.calorias||0}${l.notas?'|'+l.notas:''}`}).join('\n');
 const pesoCtx=c.peso?`\nPESO: ${c.peso}kg, Meta calórica: ${c.calgoal}kcal/día`:'';
-try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:4096,messages:[{role:'user',content:`Eres endocrinólogo con 30 años en diabetes tipo 1, experto en nutrición y peso.\n\nCONFIG: Ratio 1:${c.ratio}, Sensibilidad ${c.sensi}, Objetivo ${c.obj}, ${c.ter}${pesoCtx}\nSTATS (${n} reg): Prom ${Math.round(avg)}, DE ${Math.round(sd)}, CV ${(sd/avg*100).toFixed(1)}%, TIR ${tir}%, Hipo ${tirL}%, Hiper ${tirH}%, A1c ${a1c}%\nPOR MOMENTO:\n${mS}\nÚLTIMOS 30:\n${det}\n\nResponde en español con HTML (<h3> secciones, <p>, <strong>). Estructura: 1)RESUMEN 2)PATRONES por momento 3)AJUSTES ratio/sensibilidad con números 4)NUTRICIÓN Y PESO 5)RECOMENDACIONES 6)ALERTAS 7)PLAN semanal. Habla directo. Al final recuerda validar con médico.`}]})});
+try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:c.model,max_tokens:4096,messages:[{role:'user',content:`Eres endocrinólogo con 30 años en diabetes tipo 1, experto en nutrición y peso.\n\nCONFIG: Ratio 1:${c.ratio}, Sensibilidad ${c.sensi}, Objetivo ${c.obj}, ${c.ter}${pesoCtx}\nSTATS (${n} reg): Prom ${Math.round(avg)}, DE ${Math.round(sd)}, CV ${(sd/avg*100).toFixed(1)}%, TIR ${tir}%, Hipo ${tirL}%, Hiper ${tirH}%, A1c ${a1c}%\nPOR MOMENTO:\n${mS}\nÚLTIMOS 30:\n${det}\n\nResponde en español con HTML (<h3> secciones, <p>, <strong>). Estructura: 1)RESUMEN 2)PATRONES por momento 3)AJUSTES ratio/sensibilidad con números 4)NUTRICIÓN Y PESO 5)RECOMENDACIONES 6)ALERTAS 7)PLAN semanal. Habla directo. Al final recuerda validar con médico.`}]})});
 const data=await res.json();if(data.content?.[0]?.text)rd.innerHTML=`<div class="rc"><div class="ac">${data.content[0].text}</div></div>`;
 else if(data.error)rd.innerHTML=`<div class="al al-d">${data.error.message}</div>`}catch(e){rd.innerHTML=`<div class="al al-d">Error: ${e.message}</div>`}btn.disabled=false}
 
@@ -771,9 +776,9 @@ function toggleCollapse(id,btn){const el=document.getElementById(id);el.classLis
 function wizStart(){clH('wizard');wizActive=true;go('photo')}
 
 // CONFIG
-function saveCfg(){try{localStorage.setItem(SET,JSON.stringify({ratio:document.getElementById('c-ratio').value,sensi:document.getElementById('c-sensi').value,obj:document.getElementById('c-obj').value,ter:document.getElementById('c-ter').value,iob:document.getElementById('c-iob').value,key:document.getElementById('c-key').value,peso:document.getElementById('c-peso').value,calgoal:document.getElementById('c-calgoal').value}))}catch(e){}}
-function loadCfg(){try{const s=JSON.parse(localStorage.getItem(SET));if(s){document.getElementById('c-ratio').value=s.ratio||10;document.getElementById('c-sensi').value=s.sensi||40;document.getElementById('c-obj').value=s.obj||110;document.getElementById('c-ter').value=s.ter||'MDI';document.getElementById('c-iob').value=s.iob||0;document.getElementById('c-key').value=s.key||'';document.getElementById('c-peso').value=s.peso||'';document.getElementById('c-calgoal').value=s.calgoal||'';tIOB()}}catch(e){}}
-document.querySelectorAll('#c-ratio,#c-sensi,#c-obj,#c-ter,#c-iob,#c-key,#c-peso,#c-calgoal').forEach(el=>el.addEventListener('change',saveCfg));
+function saveCfg(){try{localStorage.setItem(SET,JSON.stringify({ratio:document.getElementById('c-ratio').value,sensi:document.getElementById('c-sensi').value,obj:document.getElementById('c-obj').value,ter:document.getElementById('c-ter').value,iob:document.getElementById('c-iob').value,key:document.getElementById('c-key').value,peso:document.getElementById('c-peso').value,calgoal:document.getElementById('c-calgoal').value,model:document.getElementById('c-model').value}))}catch(e){}}
+function loadCfg(){try{const s=JSON.parse(localStorage.getItem(SET));if(s){document.getElementById('c-ratio').value=s.ratio||10;document.getElementById('c-sensi').value=s.sensi||40;document.getElementById('c-obj').value=s.obj||110;document.getElementById('c-ter').value=s.ter||'MDI';document.getElementById('c-iob').value=s.iob||0;document.getElementById('c-key').value=s.key||'';document.getElementById('c-peso').value=s.peso||'';document.getElementById('c-calgoal').value=s.calgoal||'';if(s.model)document.getElementById('c-model').value=s.model;tIOB()}}catch(e){}}
+document.querySelectorAll('#c-ratio,#c-sensi,#c-obj,#c-ter,#c-iob,#c-key,#c-peso,#c-calgoal,#c-model').forEach(el=>el.addEventListener('change',saveCfg));
 document.getElementById('c-key').addEventListener('input',saveCfg);
 loadCfg();
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('sh')}));
