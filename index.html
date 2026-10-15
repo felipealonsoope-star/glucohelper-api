@@ -616,7 +616,7 @@ btn.disabled=true;btn.textContent='Analizando...';
 try{const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(sImg)});
 const foodCtx=food?`\nEl usuario indica que va a comer: "${food}". Usa como guía principal.`:'';
 const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-body:JSON.stringify({model:c.model,max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg.type||'image/jpeg',data:b64}},{type:'text',text:`Eres nutricionista experto en conteo de carbohidratos y macronutrientes para diabetes tipo 1 y control de peso.${foodCtx}
+body:JSON.stringify({model:c.model,max_tokens:4096,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg.type||'image/jpeg',data:b64}},{type:'text',text:`Eres nutricionista experto en conteo de carbohidratos y macronutrientes para diabetes tipo 1 y control de peso.${foodCtx}
 
 Analiza la imagen y estima porciones y macros. Para porciones usa: plato estándar (22-26cm), cubiertos, proporciones relativas, conocimiento de porciones típicas.
 
@@ -624,7 +624,7 @@ Para CADA alimento da 3 estimaciones de CHO: baja, media, alta.
 
 Responde SOLO JSON sin markdown:
 {"alimentos":[{"nombre":"...","porcion_estimada_g":0,"cho_bajo":0,"cho_medio":0,"cho_alto":0,"calorias":0,"proteinas":0,"grasas":0}],"totales":{"cho_bajo":0,"cho_medio":0,"cho_alto":0,"calorias":0,"proteinas":0,"grasas":0},"confianza":"alta|media|baja","notas":"..."}`}]}]})});
-const data=await res.json();const _tb=data.content?.find(b=>b.text);if(_tb){const result=parseAI(_tb.text);if(!result)throw new Error('No se pudo leer la respuesta de la IA');
+const data=await res.json();let _tb=data.content?.find(b=>b.type==='text'&&b.text);if(!_tb)_tb=data.content?.find(b=>b.text);if(!_tb){const thk=data.content?.find(b=>b.type==='thinking'&&b.thinking);if(thk)_tb={text:thk.thinking}}if(_tb){const result=parseAI(_tb.text);if(!result)throw new Error('No se pudo leer la respuesta de la IA');
 const t=result.totales;const confClass='conf-'+(result.confianza||'media');
 rd.innerHTML=`<div class="rc" style="margin-top:16px"><div class="bd2"><div class="bl">CHO estimados</div><div style="display:flex;align-items:baseline;justify-content:center;gap:10px"><span style="font-size:15px;color:var(--text3)">${t.cho_bajo}</span><div class="bv">${t.cho_medio}<span class="bu"> g</span></div><span style="font-size:15px;color:var(--text3)">${t.cho_alto}</span></div><div style="color:var(--text3);font-size:10px;margin-top:4px">bajo · <strong>medio</strong> · alto</div><div style="margin-top:8px"><span class="conf ${confClass}">Confianza: ${result.confianza}</span></div></div>
 <div class="macro-row" style="margin-top:0;margin-bottom:16px"><div class="macro-item cal"><div class="ml2">Kcal</div><div class="mv">${t.calorias}</div></div><div class="macro-item cho"><div class="ml2">CHO</div><div class="mv">${t.cho_medio}</div></div><div class="macro-item pro"><div class="ml2">Prot</div><div class="mv">${t.proteinas}</div></div><div class="macro-item fat"><div class="ml2">Grasa</div><div class="mv">${t.grasas}</div></div></div>
@@ -646,7 +646,7 @@ if(!c.key){rd.innerHTML='<div class="al al-w" style="margin-top:12px">Configura 
 btn.disabled=true;btn.textContent='Leyendo...';
 try{const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(sImg2)});
 const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-body:JSON.stringify({model:c.model,max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg2.type||'image/jpeg',data:b64}},{type:'text',text:`Eres experto en bombas de insulina, sensores CGM y sus apps móviles (Medtronic, Omnipod, Tandem, Dexcom, FreeStyle Libre/LibreLink, xDrip+, Guardian, CareLink, etc).
+body:JSON.stringify({model:c.model,max_tokens:4096,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:sImg2.type||'image/jpeg',data:b64}},{type:'text',text:`Eres experto en bombas de insulina, sensores CGM y sus apps móviles (Medtronic, Omnipod, Tandem, Dexcom, FreeStyle Libre/LibreLink, xDrip+, Guardian, CareLink, etc).
 
 Analiza esta imagen. Puede ser:
 - Pantalla/foto directa de una bomba de insulina
@@ -664,7 +664,7 @@ Extrae toda la información visible:
 
 Responde SOLO JSON sin markdown:
 {"glicemia":0,"tendencia":"subiendo|estable|bajando_lento|bajando_rapido|subiendo_rapido","iob":0,"ultimo_bolus":{"hora":"","unidades":0},"basal_actual":0,"alertas":[],"dispositivo":"...","confianza":"alta|media|baja","recomendacion":"..."}`}]}]})});
-const data=await res.json();const _tb2=data.content?.find(b=>b.text);if(_tb2){const p=parseAI(_tb2.text);if(!p)throw new Error('No se pudo leer la respuesta de la IA');
+const data=await res.json();let _tb2=data.content?.find(b=>b.type==='text'&&b.text);if(!_tb2)_tb2=data.content?.find(b=>b.text);if(!_tb2){const thk=data.content?.find(b=>b.type==='thinking'&&b.thinking);if(thk)_tb2={text:thk.thinking}}if(_tb2){const p=parseAI(_tb2.text);if(!p)throw new Error('No se pudo leer la respuesta de la IA');
 const trendIcon={'subiendo':'↗️','estable':'→','bajando_lento':'↘️','bajando_rapido':'⬇️','subiendo_rapido':'⬆️'};
 const trendColor={'subiendo':'var(--orange)','estable':'var(--green)','bajando_lento':'var(--accent)','bajando_rapido':'var(--red)','subiendo_rapido':'var(--red)'};
 const gColor=p.glicemia<70?'var(--red)':p.glicemia<=180?'var(--green)':p.glicemia<=250?'var(--orange)':'var(--red)';
@@ -749,7 +749,7 @@ const mS=Object.entries(byM).map(([m,d])=>`${m}: glic=${d.g.length?Math.round(d.
 const det=logs.slice(0,30).map(l=>{const d=new Date(l.datetime);return`${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}|${l.momento||'?'}|G:${l.glicemia}|CHO:${l.cho||0}|Ins:${l.insulina||0}|Kcal:${l.calorias||0}${l.notas?'|'+l.notas:''}`}).join('\n');
 const pesoCtx=c.peso?`\nPESO: ${c.peso}kg, Meta calórica: ${c.calgoal}kcal/día`:'';
 try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:c.model,max_tokens:4096,messages:[{role:'user',content:`Eres endocrinólogo con 30 años en diabetes tipo 1, experto en nutrición y peso.\n\nCONFIG: Ratio 1:${c.ratio}, Sensibilidad ${c.sensi}, Objetivo ${c.obj}, ${c.ter}${pesoCtx}\nSTATS (${n} reg): Prom ${Math.round(avg)}, DE ${Math.round(sd)}, CV ${(sd/avg*100).toFixed(1)}%, TIR ${tir}%, Hipo ${tirL}%, Hiper ${tirH}%, A1c ${a1c}%\nPOR MOMENTO:\n${mS}\nÚLTIMOS 30:\n${det}\n\nResponde en español con HTML (<h3> secciones, <p>, <strong>). Estructura: 1)RESUMEN 2)PATRONES por momento 3)AJUSTES ratio/sensibilidad con números 4)NUTRICIÓN Y PESO 5)RECOMENDACIONES 6)ALERTAS 7)PLAN semanal. Habla directo. Al final recuerda validar con médico.`}]})});
-const data=await res.json();const _tb3=data.content?.find(b=>b.text);if(_tb3)rd.innerHTML=`<div class="rc"><div class="ac">${_tb3.text}</div></div>`;
+const data=await res.json();let _tb3=data.content?.find(b=>b.type==='text'&&b.text);if(!_tb3)_tb3=data.content?.find(b=>b.text);if(!_tb3){const thk=data.content?.find(b=>b.type==='thinking'&&b.thinking);if(thk)_tb3={text:thk.thinking}}if(_tb3)rd.innerHTML=`<div class="rc"><div class="ac">${_tb3.text}</div></div>`;
 else if(data.error)rd.innerHTML=`<div class="al al-d">${data.error.message}</div>`}catch(e){rd.innerHTML=`<div class="al al-d">Error: ${e.message}</div>`}btn.disabled=false}
 
 // QUICK LOG (Improvement #1)
