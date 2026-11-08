@@ -153,6 +153,32 @@ select{font-family:'Inter',sans-serif;font-size:14px;-webkit-appearance:none;app
 .macro-item .mv{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;margin:3px 0;letter-spacing:-.5px}
 .macro-item .mu{font-size:10px;color:var(--text3)}
 .macro-item.cho .mv{color:var(--accent)}.macro-item.cal .mv{color:var(--orange)}.macro-item.pro .mv{color:var(--green)}.macro-item.fat .mv{color:var(--purple)}
+.water-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;margin-top:16px}
+.water-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.water-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.water-meta{font-size:10px;color:var(--text3);font-weight:500}
+.water-ring-wrap{display:flex;align-items:center;justify-content:center;gap:20px;margin:10px 0}
+.water-ring{position:relative;width:120px;height:120px}
+.water-ring svg{transform:rotate(-90deg)}
+.water-ring-bg{fill:none;stroke:var(--surface2);stroke-width:8}
+.water-ring-fill{fill:none;stroke:#00BCD4;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.water-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.water-ring-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:#00BCD4;letter-spacing:-1px}
+.water-ring-label{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.water-btns{display:flex;flex-direction:column;gap:6px}
+.water-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid rgba(0,188,212,.2);background:rgba(0,188,212,.06);color:#00BCD4;border-radius:var(--rs);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.water-btn:hover{background:rgba(0,188,212,.12);border-color:rgba(0,188,212,.35)}
+.water-btn:active{transform:scale(.97)}
+.water-btn svg{width:16px;height:16px;stroke:#00BCD4;fill:none;stroke-width:2}
+.water-log{margin-top:10px}
+.water-log-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.water-log-item:last-child{border-bottom:none}
+.water-log-ml{font-family:'JetBrains Mono',monospace;font-weight:700;color:#00BCD4}
+.water-log-time{color:var(--text3);font-size:10px}
+.water-tip{background:rgba(0,188,212,.06);border-radius:var(--rs);padding:10px 12px;margin-top:10px;font-size:11px;color:#00BCD4;display:flex;align-items:flex-start;gap:6px;line-height:1.4}
+.water-custom{display:flex;gap:6px;margin-top:6px}
+.water-custom input{flex:1;height:36px;border:1.5px solid var(--border);border-radius:var(--rx);padding:0 10px;font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--surface);color:var(--text)}
+.water-custom button{height:36px;padding:0 12px;border:none;background:#00BCD4;color:#fff;border-radius:var(--rx);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .bal-bar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin:10px 0 6px}
 .bal-fill{height:100%;border-radius:4px;transition:width .5s ease}
 .bal-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-weight:500}
@@ -187,7 +213,7 @@ table.lt tr:hover td{background:var(--accent-bg)}
 .pump-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
 .pump-row:not(:last-child){border-bottom:1px solid var(--border)}
 .pump-label{color:var(--text2);font-weight:500}.pump-val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent)}
-@media(max-width:640px){.fg,.cr{grid-template-columns:1fr}.dg{grid-template-columns:1fr}.sg{grid-template-columns:1fr 1fr}.macro-row{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.fg,.cr{grid-template-columns:1fr}.dg{grid-template-columns:1fr}.sg{grid-template-columns:1fr 1fr}.macro-row{grid-template-columns:repeat(3,1fr)!important}.water-ring-wrap{flex-direction:column}}
 .fab{position:fixed;bottom:96px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 4px 16px rgba(0,113,227,.35);cursor:pointer;z-index:150;display:flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent}
 .fab:hover{transform:scale(1.08)}.fab:active{transform:scale(.95)}
 .fab svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -292,6 +318,39 @@ table.lt tr:hover td{background:var(--accent-bg)}
 <div id="bal-summary"></div>
 <div id="bal-meals"></div>
 <div style="margin-top:14px"><button class="btn bs" onclick="addQuickMeal()"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar comida rápida</button></div>
+
+<!-- WATER TRACKER -->
+<div class="water-card">
+<div class="water-header">
+<div class="water-title">💧 Hidratación</div>
+<div class="water-meta" id="water-goal-label">Meta: -- ml</div>
+</div>
+<div class="water-ring-wrap">
+<div class="water-ring">
+<svg width="120" height="120" viewBox="0 0 120 120">
+<circle class="water-ring-bg" cx="60" cy="60" r="52"/>
+<circle class="water-ring-fill" id="water-ring-circle" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+</svg>
+<div class="water-ring-text">
+<div class="water-ring-val" id="water-total">0</div>
+<div class="water-ring-label">ml hoy</div>
+</div>
+</div>
+<div class="water-btns">
+<button class="water-btn" onclick="addWater(150)"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 8 2 13 2 17a10 10 0 0020 0c0-4-4.48-9-10-15z"/></svg>Vaso 150ml</button>
+<button class="water-btn" onclick="addWater(250)"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 8 2 13 2 17a10 10 0 0020 0c0-4-4.48-9-10-15z"/></svg>Vaso 250ml</button>
+<button class="water-btn" onclick="addWater(500)"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 8 2 13 2 17a10 10 0 0020 0c0-4-4.48-9-10-15z"/></svg>Botella 500ml</button>
+<button class="water-btn" onclick="toggleWaterCustom()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Otra cantidad</button>
+</div>
+</div>
+<div class="water-custom" id="water-custom" style="display:none">
+<input type="number" id="water-custom-ml" placeholder="ml" min="10" max="2000">
+<button onclick="addWaterCustom()">Agregar</button>
+</div>
+<div id="water-tip"></div>
+<div id="water-log-list" class="water-log"></div>
+</div>
+
 </div></div>
 
 <!-- LOG -->
@@ -445,7 +504,7 @@ let lastPumpTrend=null,lastPumpGlic=null,wizActive=false;
 let curTab='calc';
 function go(t){document.querySelectorAll('.pn').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
 document.getElementById('p-'+t)?.classList.add('on');document.getElementById('t-'+t)?.classList.add('on');
-if(t==='log'&&curTab!=='log'){rLog(clp);sDT()}if(t==='charts'&&curTab!=='charts')uCh(ccp);if(t==='balance')rBal();curTab=t;window.scrollTo(0,0)}
+if(t==='log'&&curTab!=='log'){rLog(clp);sDT()}if(t==='charts'&&curTab!=='charts')uCh(ccp);if(t==='balance'){rBal();rWater()}curTab=t;window.scrollTo(0,0)}
 function tIOB(){document.getElementById('c-iob-g').style.display=document.getElementById('c-ter').value==='Bomba'?'flex':'none'}
 function sm(el){el.closest('.mt').querySelectorAll('.mg').forEach(t=>t.classList.remove('on'));el.classList.add('on')}
 function gm(id){return document.getElementById(id)?.querySelector('.mg.on')?.textContent.trim()||'Otro'}
@@ -685,7 +744,8 @@ document.getElementById('bal-date').value=new Date().toLocaleDateString('es',{we
 document.getElementById('bal-goal').value=goal;
 const totCal=d.meals.reduce((s,m)=>s+m.cal,0),totCho=d.meals.reduce((s,m)=>s+m.cho,0),totPro=d.meals.reduce((s,m)=>s+m.pro,0),totFat=d.meals.reduce((s,m)=>s+m.fat,0);
 const pct=Math.min(120,Math.round(totCal/goal*100)),barColor=pct>100?'var(--red)':pct>85?'var(--orange)':'var(--green)';
-document.getElementById('bal-summary').innerHTML=`<div class="macro-row"><div class="macro-item cal"><div class="ml2">Consumidas</div><div class="mv">${totCal}</div><div class="mu">kcal</div></div><div class="macro-item cho"><div class="ml2">CHO</div><div class="mv">${totCho}</div><div class="mu">g</div></div><div class="macro-item pro"><div class="ml2">Prot</div><div class="mv">${totPro}</div><div class="mu">g</div></div><div class="macro-item fat"><div class="ml2">Grasa</div><div class="mv">${totFat}</div><div class="mu">g</div></div></div>
+const waterTotal=(getTodayBal().water||[]).reduce((s,w)=>s+w.ml,0);
+document.getElementById('bal-summary').innerHTML=`<div class="macro-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr"><div class="macro-item cal"><div class="ml2">Consumidas</div><div class="mv">${totCal}</div><div class="mu">kcal</div></div><div class="macro-item cho"><div class="ml2">CHO</div><div class="mv">${totCho}</div><div class="mu">g</div></div><div class="macro-item pro"><div class="ml2">Prot</div><div class="mv">${totPro}</div><div class="mu">g</div></div><div class="macro-item fat"><div class="ml2">Grasa</div><div class="mv">${totFat}</div><div class="mu">g</div></div><div class="macro-item" style="border:1px solid rgba(0,188,212,.15)"><div class="ml2">Agua</div><div class="mv" style="color:#00BCD4;font-size:16px">${waterTotal>=1000?(waterTotal/1000).toFixed(1):waterTotal}</div><div class="mu">${waterTotal>=1000?'L':'ml'}</div></div></div>
 <div class="bal-bar"><div class="bal-fill" style="width:${Math.min(100,pct)}%;background:${barColor}"></div></div>
 <div class="bal-label"><span>${totCal} kcal</span><span>${Math.max(0,goal-totCal)} restantes</span></div>
 <div style="text-align:center;margin:10px 0"><span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${barColor}">${pct}%</span><span style="font-size:12px;color:var(--text3)"> de tu meta</span></div>`;
@@ -699,6 +759,56 @@ function saveQuickMeal(){const desc=document.getElementById('qm-desc').value.tri
 if(!cal&&!cho){alert('Ingresa al menos calorías o CHO');return}
 const d=getTodayBal();d.meals.push({desc,time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),cal,cho,pro,fat,items:'Manual'});d.goal=gCfg().calgoal||2000;setTodayBal(d);
 clH('qmeal');['qm-desc','qm-cal','qm-cho','qm-pro','qm-fat'].forEach(x=>document.getElementById(x).value='');rBal()}
+
+// WATER TRACKING
+function getWaterGoal(){
+const c=gCfg(),peso=c.peso||70;
+let base=Math.round(peso*35);// 35ml/kg base
+// Ajuste por glicemia: si hay lectura reciente alta, más agua
+if(lastPumpGlic&&lastPumpGlic>180)base+=Math.round((lastPumpGlic-180)*2);
+// Ajuste por calorías consumidas hoy
+const d=getTodayBal();const totCal=d.meals.reduce((s,m)=>s+m.cal,0);
+if(totCal>0)base+=Math.round(totCal*0.15);// ~150ml por cada 1000kcal
+return Math.round(base/50)*50;// redondear a 50ml
+}
+function getWaterToday(){const d=getTodayBal();return d.water||[]}
+function addWater(ml){
+const d=getTodayBal();
+if(!d.water)d.water=[];
+d.water.push({ml,time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+d.goal=gCfg().calgoal||2000;setTodayBal(d);rWater()}
+function addWaterCustom(){
+const ml=+document.getElementById('water-custom-ml').value;
+if(!ml||ml<10){alert('Ingresa una cantidad válida');return}
+addWater(ml);document.getElementById('water-custom-ml').value='';
+document.getElementById('water-custom').style.display='none'}
+function toggleWaterCustom(){const el=document.getElementById('water-custom');el.style.display=el.style.display==='none'?'flex':'none';if(el.style.display==='flex')document.getElementById('water-custom-ml').focus()}
+function rmWater(i){const d=getTodayBal();if(d.water)d.water.splice(i,1);setTodayBal(d);rWater()}
+function rWater(){
+const water=getWaterToday(),goal=getWaterGoal();
+const total=water.reduce((s,w)=>s+w.ml,0);
+const pct=Math.min(100,Math.round(total/goal*100));
+// Update ring
+const circle=document.getElementById('water-ring-circle');
+if(circle){const circ=2*Math.PI*52;circle.setAttribute('stroke-dashoffset',circ-(circ*pct/100))}
+// Update counter
+const valEl=document.getElementById('water-total');if(valEl)valEl.textContent=total;
+// Update goal label
+const goalEl=document.getElementById('water-goal-label');
+if(goalEl)goalEl.textContent=`Meta: ${goal} ml (${pct}%)`;
+// Tip based on state
+const tipEl=document.getElementById('water-tip');
+if(tipEl){
+if(total===0)tipEl.innerHTML='<div class="water-tip">💡 La hidratación ayuda al control glicémico. Hiperglicemia causa deshidratación — beber agua ayuda a bajar la glucosa.</div>';
+else if(pct<50)tipEl.innerHTML=`<div class="water-tip">💧 Llevas ${pct}% de tu meta. ${lastPumpGlic&&lastPumpGlic>180?'Tu glicemia está alta — beber agua ayuda a diluir la glucosa.':'¡Sigue tomando agua!'}</div>`;
+else if(pct<100)tipEl.innerHTML=`<div class="water-tip">👏 ¡Vas bien! ${Math.round(goal-total)} ml más para completar tu meta.</div>`;
+else tipEl.innerHTML='<div class="water-tip">✅ ¡Meta cumplida! Mantente hidratado si hace calor o haces ejercicio.</div>'}
+// Log list
+const logEl=document.getElementById('water-log-list');
+if(logEl){
+if(!water.length){logEl.innerHTML='';return}
+logEl.innerHTML=water.slice().reverse().map((w,ri)=>{const i=water.length-1-ri;return`<div class="water-log-item"><span class="water-log-ml">${w.ml} ml</span><span class="water-log-time">${w.time}</span><button class="db" onclick="rmWater(${i})" style="font-size:12px">✕</button></div>`}).join('')}
+}
 
 // LOG
 function sDT(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());document.getElementById('r-dt').value=n.toISOString().slice(0,16)}
